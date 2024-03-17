@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JavaScript im Browser ausführen</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+    crossorigin="anonymous"></script>
+</head>
+
+<body>
+  <div class="container">
+    <div id="app" class="App">
+      <h0>Spieler:</h0>
+      <ul id="spielerReihenfolge"></ul>
+    </div>
+
+    <script>
+      console.log('get gameData');
+      const gameData = sessionStorage.getItem('gameData');
+      const data = JSON.parse(gameData);
+
+      if (data && data.spielerReihenfolge) {
+        updateSpielerReihenfolge(data.spielerReihenfolge);
+      }
+
+      function updateSpielerReihenfolge(spielerReihenfolge) {
+        const spielerReihenfolgeList = document.getElementById('spielerReihenfolge');
+        spielerReihenfolgeList.innerHTML = '';
+
+        const row = document.createElement('div');
+        row.classList.add('row', 'row-cols-4');
+
+        spielerReihenfolge.forEach(spieler => {
+          // Erstelle eine Bootstrap-Karte für jeden Spieler
+          const card = document.createElement('div');
+          card.classList.add('card', 'mb-3', 'col');
+          card.style.width = '18rem'; // Du kannst die Breite anpassen
+
+          const cardBody = document.createElement('div');
+          cardBody.classList.add('card-body');
+
+          const cardTitle = document.createElement('h5');
+          cardTitle.classList.add('card-title');
+          cardTitle.innerText = spieler.name;
+
+          const cardTextSpielAvg = document.createElement('p');
+          cardTextSpielAvg.classList.add('card-text');
+          cardTextSpielAvg.style.lineHeight = '1'; // Verringere den Zeilenabstand
+          cardTextSpielAvg.innerText = 'Spiel Average: ' + spieler.statistik.avgSpiel;
+
+          const cardTextTurnierAvg = document.createElement('p');
+          cardTextTurnierAvg.classList.add('card-text');
+          cardTextTurnierAvg.style.lineHeight = '1'; // Verringere den Zeilenabstand
+          cardTextTurnierAvg.innerText = 'Turnier Average: ' + spieler.statistik.avgTurnier;
+
+          const cardTextStrafpunkte = document.createElement('p');
+          cardTextStrafpunkte.classList.add('card-text');
+          cardTextStrafpunkte.style.lineHeight = '1'; // Verringere den Zeilenabstand
+          cardTextStrafpunkte.innerText = 'Strafpunkte: ' + spieler.statistik.anzStrafpunkte;
+
+          const cardTextDartboardId = document.createElement('p');
+          cardTextDartboardId.classList.add('card-text');
+          cardTextDartboardId.style.lineHeight = '1'; // Verringere den Zeilenabstand
+          cardTextDartboardId.innerText = 'DartboardID: ' + spieler.dartboardId;
+
+
+          const cardTextWuerfeSpiel = document.createElement('p');
+          cardTextWuerfeSpiel.classList.add('card-text');
+          cardTextWuerfeSpiel.style.lineHeight = '1'; // Verringere den Zeilenabstand
+          cardTextWuerfeSpiel.innerText = 'Anzahl Würfe Spiel: ' + spieler.statistik.anzWuerfeSpiel;
+
+          const cardTextWuerfeTurnier = document.createElement('p');
+          cardTextWuerfeTurnier.classList.add('card-text');
+          cardTextWuerfeTurnier.style.lineHeight = '1'; // Verringere den Zeilenabstand
+          cardTextWuerfeTurnier.innerText = 'Anzahl Würfe Turnier: ' + spieler.statistik.anzWuerfeTurnier;
+
+          const cardTextRandtreffer = document.createElement('p');
+          cardTextRandtreffer.classList.add('card-text');
+          cardTextRandtreffer.style.lineHeight = '1'; // Verringere den Zeilenabstand
+          cardTextRandtreffer.innerText = 'Randtreffer: ' + spieler.statistik.anzRandTreffer;
+
+          const cardTextWandtreffer = document.createElement('p');
+          cardTextWandtreffer.classList.add('card-text');
+          cardTextWandtreffer.style.lineHeight = '1'; // Verringere den Zeilenabstand
+          cardTextWandtreffer.innerText = 'Wandtreffer: ' + spieler.statistik.anzWandTreffer;
+
+          const cardTextEiner = document.createElement('p');
+          cardTextEiner.classList.add('card-text');
+          cardTextEiner.style.lineHeight = '1'; // Verringere den Zeilenabstand
+          cardTextEiner.innerText = 'Einer: ' + spieler.statistik.anzEinerFeld;
+
+          const cardTextDouble = document.createElement('p');
+          cardTextDouble.classList.add('card-text');
+          cardTextDouble.style.lineHeight = '1'; // Verringere den Zeilenabstand
+          cardTextDouble.innerText = 'Double: ' + spieler.statistik.anzDoubleFeld;
+
+          const cardTextTriple = document.createElement('p');
+          cardTextTriple.classList.add('card-text');
+          cardTextTriple.style.lineHeight = '1'; // Verringere den Zeilenabstand
+          cardTextTriple.innerText = 'Triple: ' + spieler.statistik.anzTripleFeld;
+
+          const cardTextBull = document.createElement('p');
+          cardTextBull.classList.add('card-text');
+          cardTextBull.style.lineHeight = '1'; // Verringere den Zeilenabstand
+          cardTextBull.innerText = 'Bull: ' + spieler.statistik.anzBull;
+
+          const cardTextBullseye = document.createElement('p');
+          cardTextBullseye.classList.add('card-text');
+          cardTextBullseye.style.lineHeight = '1'; // Verringere den Zeilenabstand
+          cardTextBullseye.innerText = 'Bullseye: ' + spieler.statistik.anzBullseye;
+
+          const cardTextPunkteSpielzug = document.createElement('p');
+          cardTextPunkteSpielzug.classList.add('card-text');
+          cardTextPunkteSpielzug.style.lineHeight = '1'; // Verringere den Zeilenabstand
+          cardTextPunkteSpielzug.innerText = 'Max Punkte Spielzug: ' + spieler.statistik.maxPunkteProSpielzug;
+
+          const cardTextHighestFinish = document.createElement('p');
+          cardTextHighestFinish.classList.add('card-text');
+          cardTextHighestFinish.style.lineHeight = '1'; // Verringere den Zeilenabstand
+          cardTextHighestFinish.innerText = 'Highest Finish: ' + spieler.statistik.highestFinish;
+
+          const cardTextMinWuerfe = document.createElement('p');
+          cardTextMinWuerfe.classList.add('card-text');
+          cardTextMinWuerfe.style.lineHeight = '1'; // Verringere den Zeilenabstand
+          cardTextMinWuerfe.innerText = 'MinWürfe bis Spielende: ' + spieler.statistik.anzMinWuerfeBisSpielende;
+
+          const cardTextAnzUeberworfen = document.createElement('p');
+          cardTextAnzUeberworfen.classList.add('card-text');
+          cardTextAnzUeberworfen.style.lineHeight = '1'; // Verringere den Zeilenabstand
+          cardTextAnzUeberworfen.innerText = 'Anzahl Überworfen: ' + spieler.statistik.anzUeberworfen;
+
+          const cardTextSummeSpiel = document.createElement('p');
+          cardTextSummeSpiel.classList.add('card-text');
+          cardTextSummeSpiel.style.lineHeight = '1'; // Verringere den Zeilenabstand
+          cardTextSummeSpiel.innerText = 'Summe Spielpunkte: ' + spieler.statistik.summeSpiel;
+
+          const cardTextSummeTurnier = document.createElement('p');
+          cardTextSummeTurnier.classList.add('card-text');
+          cardTextSummeTurnier.style.lineHeight = '1'; // Verringere den Zeilenabstand
+          cardTextSummeTurnier.innerText = 'Summe Turnierpunkte: ' + spieler.statistik.summeTurnier;
+
+          cardBody.appendChild(cardTitle);
+          cardBody.appendChild(cardTextDartboardId);
+        
+          cardBody.appendChild(cardTextSpielAvg);
+          cardBody.appendChild(cardTextTurnierAvg);
+          cardBody.appendChild(cardTextPunkteSpielzug);
+          cardBody.appendChild(cardTextHighestFinish);
+          cardBody.appendChild(cardTextMinWuerfe);
+          cardBody.appendChild(cardTextAnzUeberworfen);
+
+          cardBody.appendChild(cardTextEiner);
+          cardBody.appendChild(cardTextDouble);
+          cardBody.appendChild(cardTextTriple);
+          cardBody.appendChild(cardTextBull);
+          cardBody.appendChild(cardTextBullseye);
+
+          cardBody.appendChild(cardTextRandtreffer);
+          cardBody.appendChild(cardTextWandtreffer);
+          cardBody.appendChild(cardTextStrafpunkte);
+          cardBody.appendChild(cardTextWuerfeSpiel);
+          cardBody.appendChild(cardTextWuerfeTurnier);
+          cardBody.appendChild(cardTextSummeSpiel);
+          cardBody.appendChild(cardTextSummeTurnier);
+
+
+          card.appendChild(cardBody);
+
+          row.appendChild(card);
+        });
+
+        spielerReihenfolgeList.appendChild(row);
+      }
+
+    </script>
+</body>
+
+</html>

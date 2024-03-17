@@ -1,0 +1,71 @@
+#bullgif {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 600px; /* Breite des Bildes */
+    height: 400px; /* Höhe des Bildes */
+    margin-top: -300px; /* Hälfte der Höhe des Bildes, um es vertikal zentriert zu positionieren */
+    margin-left: -200px; /* Hälfte der Breite des Bildes, um es horizontal zentriert zu positionieren */
+    z-index: 9999; /* Stellen Sie sicher, dass das Bild über allem anderen liegt */
+    display: none; /* Startet ausgeblendet */
+}
+
+#randgif {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 600px; /* Breite des Bildes */
+    height: 400px; /* Höhe des Bildes */
+    margin-top: -300px; /* Hälfte der Höhe des Bildes, um es vertikal zentriert zu positionieren */
+    margin-left: -200px; /* Hälfte der Breite des Bildes, um es horizontal zentriert zu positionieren */
+    z-index: 9999; /* Stellen Sie sicher, dass das Bild über allem anderen liegt */
+    display: none; /* Startet ausgeblendet */
+}
+
+#strafegif {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 600px; /* Breite des Bildes */
+    height: 400px; /* Höhe des Bildes */
+    margin-top: -300px; /* Hälfte der Höhe des Bildes, um es vertikal zentriert zu positionieren */
+    margin-left: -200px; /* Hälfte der Breite des Bildes, um es horizontal zentriert zu positionieren */
+    z-index: 9999; /* Stellen Sie sicher, dass das Bild über allem anderen liegt */
+    display: none; /* Startet ausgeblendet */
+}
+
+#maxPointsgif {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 600px; /* Breite des Bildes */
+    height: 400px; /* Höhe des Bildes */
+    margin-top: -300px; /* Hälfte der Höhe des Bildes, um es vertikal zentriert zu positionieren */
+    margin-left: -200px; /* Hälfte der Breite des Bildes, um es horizontal zentriert zu positionieren */
+    z-index: 9999; /* Stellen Sie sicher, dass das Bild über allem anderen liegt */
+    display: none; /* Startet ausgeblendet */
+}
+
+#winnergif {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 600px; /* Breite des Bildes */
+    height: 400px; /* Höhe des Bildes */
+    margin-top: -300px; /* Hälfte der Höhe des Bildes, um es vertikal zentriert zu positionieren */
+    margin-left: -200px; /* Hälfte der Breite des Bildes, um es horizontal zentriert zu positionieren */
+    z-index: 9999; /* Stellen Sie sicher, dass das Bild über allem anderen liegt */
+    display: none; /* Startet ausgeblendet */
+}
+
+#ueberworfengif {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 600px; /* Breite des Bildes */
+    height: 400px; /* Höhe des Bildes */
+    margin-top: -300px; /* Hälfte der Höhe des Bildes, um es vertikal zentriert zu positionieren */
+    margin-left: -200px; /* Hälfte der Breite des Bildes, um es horizontal zentriert zu positionieren */
+    z-index: 9999; /* Stellen Sie sicher, dass das Bild über allem anderen liegt */
+    display: none; /* Startet ausgeblendet */
+}
