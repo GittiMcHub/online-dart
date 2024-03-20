@@ -1,6 +1,6 @@
 # onlineDart
-Eine alte Hobby-Dart Gruppe aus den 90gern, hat sich wieder zusammengefunden. Dabei wurden die alten Smartness[^4] Dartschieben aus dem Keller geholt. Die meisten alten Scheiben sind leider nur auf bis zu 4 Spieler ausgelegt. Durch den Corona Lockdown entstand die Idee verteilt online Dart gegeneinander zu spielen.  
-Mit der Zeit entstand dieses Repository. Es ist sicherlich nicht optimal programmiert, die Diagramme sind nich unbedingt UML-Konform - es handelt sich schlicht um ein Hobbyprojekt ;)  
+Eine alte Hobby-Dart Gruppe aus den 90gern, hat sich wieder zusammengefunden. Dabei wurden die alten Smartness[^4] Dartschieben aus dem Keller geholt. Die meisten alten Scheiben sind leider nur für bis zu 4 Spieler ausgelegt. Durch den Corona Lockdown entstand die Idee verteilt online Dart gegeneinander zu spielen.  
+Mit der Zeit entstand dieses Repository. Es ist sicherlich nicht optimal programmiert, die Diagramme sind nicht unbedingt UML-Konform - es handelt sich schlicht um ein Hobbyprojekt ;)  
 Bei unserer Dartrunde haben wir verschiedene Regeln: Wandtreffer, Schnapszahlen, Falschwürfe (Werfen obwohl nicht am Zug) kosten Strafpunkte in Form von Moneten. Auch die Platzierung staffelt den Preis. Diese Regeln sollen möglichst variable eingestellt werden können. Aktuell ist nur 301 ohne double in/out verfügbar. Die Architektur des Dart-Servers ist auch nicht ideal dafür für weitere Spielmodi zu implementieren. Wer ein bisschen programmieren kann, kann diesen Code sicherlich für sich anpassen.  
 Anfänglich wurde eine alte E-Dart-Scheibe mit einem Raspberry Pi versehen, später haben wir dann die Smartboard Dartscheibe von Smartness für uns entdeckt und bedeuted weniger Aufwand.  
 
@@ -17,7 +17,6 @@ Einen Ansatz, wie ihr eine alte Dartscheibe in eine Smarte mit einem Raspberry P
 Zum testen ist dort ein offline Client in python bereitgestellt. Dies war der erste Versuch dieses Projekts und wird nicht aktiv weiterentwickelt.
 
 # Funktionsübersicht der enthaltenen Softwarekomponenten
-Kleine Übersicht der Komponenten:
 ## dart-board-connector
 ### dartBlueMqttConnector
 Diese in Python geschriebene Komponente verbindet sich via Bluetooth LE mit der Dartscheibe und übersetzt die betätigten Tasten (Hex Werte) der Dartscheibe in einen String um (siehe Abschnitt: Dartboard Value Übersetzung (Interface)). Anschließend wird der String an einen MQTT-Broker published. Unter `config` müsst ihr die MAC und UUID des Dartboards angeben, sowie die Daten für den MQTT Broker. 
@@ -346,7 +345,7 @@ https://stackoverflow.com/questions/28445552/bluetooth-hci-snoop-log-not-generat
 [^6]: Android Plattform Tools:  
 https://developer.android.com/tools/releases/platform-tools  
 [^15]: Thema Bluetooth Informationen:  
-http://docwiki.embarcadero.com/RADStudio/Sydney/de/Verwenden_von_Bluetooth_Low_Energy
+http://docwiki.embarcadero.com/RADStudio/Sydney/de/Verwenden_von_Bluetooth_Low_Energy  
 https://www.golem.de/news/golem-de-programmiert-bluetoothle-im-eigenbau-1404-105896.html  
 [^16]: OpenJDK:  
 https://openjdk.org/install/  
