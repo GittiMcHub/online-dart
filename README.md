@@ -13,7 +13,7 @@ Anfänglich wurde eine alte E-Dart-Scheibe mit einem Raspberry Pi versehen, spä
 
 ## Eigenes Smartboard bauen
 Durch die Client/Server Architektur und asynchroner ungekoppelter Kommunikation über MQTT soll es ermöglicht werden, sowohl mit gekauften, als auch selbstgebauten smarten Dartboads aus alten Dartscheiben, gegeneinander spielen zu können.  
-Einen Ansatz, wie ihr eine alte Dartscheibe in eine Smarte mit einem Raspberry Pi umbauen könnt, findet ihr [hier](https://github.com/GittiMcHub/online-dart/tree/dev/tools/buildOwnSmartboard).  
+Einen Ansatz, wie ihr eine alte Dartscheibe in eine Smarte mit einem Raspberry Pi umbauen könnt, findet ihr [hier](https://github.com/GittiMcHub/online-dart/tree/master/tools/buildOwnSmartboard).  
 Zum testen ist dort ein offline Client in python bereitgestellt. Dies war der erste Versuch dieses Projekts und wird nicht aktiv weiterentwickelt.
 
 # Funktionsübersicht der enthaltenen Softwarekomponenten
@@ -198,7 +198,7 @@ python /src/bluetoothExplorer/dartbleed.py
 ```  
 ![Dartbleed](doc/screenLogs/Dartbleed.png)  
 
-Dadurch habe ich auch herausgefunden, dass jedes Feld einzeln abgefragt wird. Bei alten Dartscheiben sind manchmal die 1x Felder zusammengefasst (siehe [hier](https://github.com/GittiMcHub/online-dart/tree/dev/tools/buildOwnSmartboard)). Für weitere Informationen zum Thema Bluetooth sind unten zu finden[^15].
+Dadurch habe ich auch herausgefunden, dass jedes Feld einzeln abgefragt wird. Bei alten Dartscheiben sind manchmal die 1x Felder zusammengefasst (siehe [hier](https://github.com/GittiMcHub/online-dart/tree/master/tools/buildOwnSmartboard)). Für weitere Informationen zum Thema Bluetooth sind unten zu finden[^15].
 
 # Installation und How To Use (TODO)
 ## Dart-Broker
@@ -307,9 +307,9 @@ python dartBlueMqttConnector.py
 Wenn ihr Online gegeneinander spielt, achtet darauf, dass ihr euren Router und eure Firewall entsprechend konfiguriert. Auch wenn ihr den MQTT Broker auf einem anderen PC im LAN laufen lasst, kann es u.U. nötig sein die Firewall Einstellungen anzupassen.
 
 # Copyrights und Links
-Strafe sound: https://pixabay.com "Cash Register" from MAXOU-YT  
-180 sound: https://www.myinstants.com/de/instant/180-russ-bray-48439/  
-Alle anderen Sounds: Originalsound from Smartness Dartboard mit einem Iphone aufgezeichnet  
+Strafe sound:  https://pixabay.com "Cash Register" from MAXOU-YT  
+180 sound:  https://www.myinstants.com/de/instant/180-russ-bray-48439/  
+Alle anderen Sounds sind original Sounds von einem alten Smartness Dartboard, die mit einem Iphone aufgezeichnet wurden.  
 Animationen Web Client:  
 https://www.youtube.com/watch?v=emWCSpEDx8Y  
 https://www.youtube.com/watch?v=7HrmD_vIMIk  
