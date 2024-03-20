@@ -160,7 +160,7 @@ Folgend die Übersetzungstabelle für unser Dartprogramm:
 |NEXT |65   |999|
 
 # JSON Schema für den Client
-Das JSON Schema zum Validieren für weitere Serverimplementierungen befindet sich unter:  `onlineDart/dart-server/schema.json`  
+Das JSON Schema zum Validieren für weitere Serverimplementierungen befindet sich unter:  `online-Dart/dart-server/schema.json`  
 
 # Reverse Engineering eines smarten Darboards
 Zuerst habe ich mir den Beitrag von Hackernoon durchgelesen [^5].  
@@ -206,8 +206,8 @@ Entweder habt ihr schon einen MQTT Broker am laufen oder ihr benötigt dafür Do
 Das Image `eclipse-mosquitto:latest` herunterladen  
 Container Optional settings anpassen und starten:  
 `Ports: 1183 und 8083`  
-`(Pfad zum Ordner)/onlineDart/dart-broker/mosquitto.conf:/mosquitto/config/mosquitto.conf`  
-`(Pfad zum Ordner)/onlineDart/dart-broker/passwd:/mosquitto/config/passwd`  
+`(Pfad zum Ordner)/online-Dart/dart-broker/mosquitto.conf:/mosquitto/config/mosquitto.conf`  
+`(Pfad zum Ordner)/online-Dart/dart-broker/passwd:/mosquitto/config/passwd`  
 ![Docker](doc/install/dockerpaths.png)  
 
 Alternativ über die Kommandozeile mit  
@@ -223,7 +223,7 @@ Zum testen könnt ihr einen MQTT Client ausführen und Nachrichten an den Broker
 
 ## Dart-Server
 Es gibt unterschiedliche Serverimplementierungen, aus denen ihr auswählen könnt. Derzeit existieren nur Server in JAVA.  
-Dafür benötigt ihr openjdk (getestet mit Version 17.0.8.1 2023-08-24) und maven[^13]     
+Dafür benötigt ihr openjdk[^16] (getestet mit Version 17.0.8.1 2023-08-24) und maven[^13]     
 ### Anthrax
 Im anthrax-server eure mqttbroker.conf Datei anpassen  
 `mqtt_broker_ip:IP.ADRESSE.BROKER.EINTRAGEN`  
@@ -244,7 +244,7 @@ java -jar .\target\anthrax-1.0-SNAPSHOT-jar-with-dependencies.jar
 ```  
 
 #### Option B mit Docker starten
-in das Verzeichnis `/onlineDart/dart-server/anthrax-server` wechseln und das Terminal öffnen, um das Image zu bauen.  
+in das Verzeichnis `/online-Dart/dart-server/anthrax-server` wechseln und das Terminal öffnen, um das Image zu bauen.  
 ```
 docker build -t anthrax-server-container .
 ```
@@ -284,9 +284,9 @@ TODO
 
 ## Dart-Board-Connector
 ### DartblueMQTTConnector
-Ihr benötigt für den Dart-Board-Connector ein Bluetooth fähiges Gerät und Python in der Version `3.9.7` (https://www.python.org/downloads/)  
+Ihr benötigt für den Dart-Board-Connector ein Bluetooth fähiges Gerät und Python in der Version `3.9.7`[^17]  
 Zusätzlich müsst ihr die erforderlichen Bibliotheken über PIP installieren  
-Dafür führt ihr folgenden Befehl im Verzeichnis `onlineDart\dart-board-connector\dartBlueMqttConnector` aus:  
+Dafür führt ihr folgenden Befehl im Verzeichnis `online-Dart\dart-board-connector\dartBlueMqttConnector` aus:  
 ```
 pip install -r requirements.txt
 ```  
@@ -348,3 +348,7 @@ https://developer.android.com/tools/releases/platform-tools
 [^15]: Thema Bluetooth Informationen:  
 http://docwiki.embarcadero.com/RADStudio/Sydney/de/Verwenden_von_Bluetooth_Low_Energy
 https://www.golem.de/news/golem-de-programmiert-bluetoothle-im-eigenbau-1404-105896.html  
+[^16]: OpenJDK:  
+https://openjdk.org/install/  
+[^17]: Python:  
+https://www.python.org/downloads/  
