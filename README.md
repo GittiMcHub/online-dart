@@ -13,7 +13,7 @@ Anfänglich wurde eine alte E-Dart-Scheibe mit einem Raspberry Pi versehen, spä
 
 ## Eigenes Smartboard bauen
 Durch die Client/Server Architektur und asynchroner ungekoppelter Kommunikation über MQTT soll es ermöglicht werden, sowohl mit gekauften, als auch selbstgebauten smarten Dartboads aus alten Dartscheiben, gegeneinander spielen zu können.  
-Einen Ansatz, wie ihr eine alte Dartscheibe in eine Smarte mit einem Raspberry Pi umbauen könnt, findet ihr [hier](https://github.com/fri3drich/onlineDart/tree/main/tools/buildOwnSmartboard).  
+Einen Ansatz, wie ihr eine alte Dartscheibe in eine Smarte mit einem Raspberry Pi umbauen könnt, findet ihr [hier](https://github.com/GittiMcHub/online-dart/tree/dev/tools/buildOwnSmartboard).  
 Zum testen ist dort ein offline Client in python bereitgestellt. Dies war der erste Versuch dieses Projekts und wird nicht aktiv weiterentwickelt.
 
 # Funktionsübersicht der enthaltenen Softwarekomponenten
@@ -125,7 +125,7 @@ Werte für weitere Würfe / Funktionen
 
 # Smart Dartboard Übersetzungstabelle 
 Wir gehen davon aus, dass alle smarten Dartboards den selben Chip verwenden. Folgend die Auflistung mit denen wir es getestet haben:  
-- [x] Smartness Turbo Charger 4.0 Smart connect Dartboard (https://shop.carromco.com/shop/dartboards/smart-connect-dartboard-turbo-charger-4-0/)  
+- [x] Smartness Turbo Charger 4.0 Smart connect Dartboard[^3] (https://shop.carromco.com/shop/dartboards/smart-connect-dartboard-turbo-charger-4-0/)  
 - [x] Sunflex Smart Tec (https://www.amazon.de/Sunflex-Dartscheibe-Smart-elektronische-Ersatzspitzen/dp/B07X1TMMX4)  
 - [ ] Smartness Arcadia 4.0 Smart connect Dartboard (https://shop.carromco.com/shop/dartboards/smart-connect-dartboard-arcadia-4-0/)  
   
@@ -319,7 +319,7 @@ https://giphy.com/gifs/bbcamerica-funny-reaction-1lBIIjVOnY5YfdOnQe
 https://giphy.com/gifs/funny-baby-winner-LFiOdYoOlEKac
 
 # Linksammlung
-Sunflex Smart Tec Dartscheibe:  
+[^3]: Sunflex Smart Tec Dartscheibe:  
 https://www.amazon.de/Sunflex-Dartscheibe-Smart-elektronische-Ersatzspitzen/dp/B07X1TMMX4  
 Original Smartness App Android:  
 https://play.google.com/store/apps/details?id=com.evisionhk.smartness&hl=de&gl=US  
