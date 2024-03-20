@@ -125,9 +125,9 @@ Werte für weitere Würfe / Funktionen
 
 # Smart Dartboard Übersetzungstabelle 
 Wir gehen davon aus, dass alle smarten Dartboards den selben Chip verwenden. Folgend die Auflistung mit denen wir es getestet haben:  
-[✓] Smartness Turbo Charger 4.0 Smart connect Dartboard (https://shop.carromco.com/shop/dartboards/smart-connect-dartboard-turbo-charger-4-0/)  
-[✓] Sunflex Smart Tec (https://www.amazon.de/Sunflex-Dartscheibe-Smart-elektronische-Ersatzspitzen/dp/B07X1TMMX4)  
-[x] Smartness Arcadia 4.0 Smart connect Dartboard (https://shop.carromco.com/shop/dartboards/smart-connect-dartboard-arcadia-4-0/)  
+- [x] Smartness Turbo Charger 4.0 Smart connect Dartboard (https://shop.carromco.com/shop/dartboards/smart-connect-dartboard-turbo-charger-4-0/)  
+- [x] Sunflex Smart Tec (https://www.amazon.de/Sunflex-Dartscheibe-Smart-elektronische-Ersatzspitzen/dp/B07X1TMMX4)  
+- [] Smartness Arcadia 4.0 Smart connect Dartboard (https://shop.carromco.com/shop/dartboards/smart-connect-dartboard-arcadia-4-0/)  
   
 Name des Bluetoothchips: `Smartness1`  
 UUID: `0000ffe1-0000-1000-8000-00805f9b34fb`  
