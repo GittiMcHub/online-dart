@@ -123,11 +123,17 @@ Werte für weitere Würfe / Funktionen
 |Rand- / kein Treffer|998|
 |Next|999|
 
-# Dartboard Übersetzungstabelle 
-## Sunflex Dartscheibe von Smart Tec
-Jedes Feld wird einzeln abgefragt. Deswegen sind für die "Feld mal 1 Felder" 2 Hex Werte vorhanden.  
-Folgend die Übersetzung der Sunflex Smart Tec Dartscheibe:  
-(Der Bluetoothchip der Sunflex Smart Tec Dartscheibe sendet den Namen "Smartness1")  
+# Smart Dartboard Übersetzungstabelle 
+Wir gehen davon aus, dass alle smarten Dartboards den selben Chip verwenden. Folgend die Auflistung mit denen wir es getestet haben:  
+[✓] Smartness Turbo Charger 4.0 Smart connect Dartboard (https://shop.carromco.com/shop/dartboards/smart-connect-dartboard-turbo-charger-4-0/)  
+[✓] Sunflex Smart Tec (https://www.amazon.de/Sunflex-Dartscheibe-Smart-elektronische-Ersatzspitzen/dp/B07X1TMMX4)  
+[x] Smartness Arcadia 4.0 Smart connect Dartboard (https://shop.carromco.com/shop/dartboards/smart-connect-dartboard-arcadia-4-0/)  
+  
+Name des Bluetoothchips: `Smartness1`  
+UUID: `0000ffe1-0000-1000-8000-00805f9b34fb`  
+
+Folgend die Übersetzungstabelle für unser Dartprogramm:  
+(Jedes Feld wird einzeln abgefragt. Deswegen sind für die "Feld-mal-1-Felder" 2 Hex Werte vorhanden)  
 | Feld   | Dartboard Value (Hex)          | Für Server |-|Feld  | Dartboard Value (Hex)          | Für Server |-|Feld  | Dartboard Value (Hex)          | Für Server |
 |--------------|------------------|--------------------|--------------------|------------------|--------------------|--------------------|--------------------|------------------|--------------------|--------------------|
 |1|01 & 15 |  101||2x 1 |29   |201||3x 1 |3d    |301|
@@ -152,8 +158,6 @@ Folgend die Übersetzung der Sunflex Smart Tec Dartscheibe:
 |20|14 & 28|  120||2x20|3c   |220||3x20|50    |320|
 |25|51     |  125||2x25|52   |225||
 |NEXT |65   |999|
-## Carromco Smartness Dartscheibe Turbo Charger 4.0
-TODO
 
 # JSON Schema für den Client
 Das JSON Schema zum Validieren für weitere Serverimplementierungen befindet sich unter:  `onlineDart/dart-server/schema.json`  
