@@ -1,5 +1,5 @@
 # onlineDart
-Eine alte Hobby-Dart Gruppe aus den 90gern, hat sich wieder zusammengefunden. Dabei wurden die alten Smartness Dartschieben aus dem Keller geholt. Die meisten alten Scheiben sind leider nur auf bis zu 4 Spieler ausgelegt. Durch den Corona Lockdown entstand die Idee verteilt online Dart gegeneinander zu spielen.  
+Eine alte Hobby-Dart Gruppe aus den 90gern, hat sich wieder zusammengefunden. Dabei wurden die alten Smartness[^4] Dartschieben aus dem Keller geholt. Die meisten alten Scheiben sind leider nur auf bis zu 4 Spieler ausgelegt. Durch den Corona Lockdown entstand die Idee verteilt online Dart gegeneinander zu spielen.  
 Mit der Zeit entstand dieses Repository. Es ist sicherlich nicht optimal programmiert, die Diagramme sind nich unbedingt UML-Konform - es handelt sich schlicht um ein Hobbyprojekt ;)  
 Bei unserer Dartrunde haben wir verschiedene Regeln: Wandtreffer, Schnapszahlen, Falschwürfe (Werfen obwohl nicht am Zug) kosten Strafpunkte in Form von Moneten. Auch die Platzierung staffelt den Preis. Diese Regeln sollen möglichst variable eingestellt werden können. Aktuell ist nur 301 ohne double in/out verfügbar. Die Architektur des Dart-Servers ist auch nicht ideal dafür für weitere Spielmodi zu implementieren. Wer ein bisschen programmieren kann, kann diesen Code sicherlich für sich anpassen.  
 Anfänglich wurde eine alte E-Dart-Scheibe mit einem Raspberry Pi versehen, später haben wir dann die Smartboard Dartscheibe von Smartness für uns entdeckt und bedeuted weniger Aufwand.  
@@ -163,15 +163,15 @@ Folgend die Übersetzungstabelle für unser Dartprogramm:
 Das JSON Schema zum Validieren für weitere Serverimplementierungen befindet sich unter:  `onlineDart/dart-server/schema.json`  
 
 # Reverse Engineering eines smarten Darboards
-Zuerst habe ich mir den Beitrag von Hackernoon durchgelesen (Link Hilfreiche Links).  
-Die Android Plattform-tools, ein Android Telefon und Wireshark benötigt ihr nicht zwingend, nachdem ihr diesen Beitrag gelesen habt, aber soll hier vollsätndigkeitshalber erwähnt werden.  
-Anschließend habe ich mir ein Android Telefon ausgeliehen, die Entwickleroption + HCI Bluetooth Log aktiviert und die Smartness App aufs Handy geladen (Link siehe Weitere Links).  
+Zuerst habe ich mir den Beitrag von Hackernoon durchgelesen [^5].  
+Die Android Plattform-tools[^6], ein Android Telefon und Wireshark[^9] benötigt ihr nicht zwingend, nachdem ihr dieses Kapitel gelesen habt, aber soll hier vollsätndigkeitshalber erwähnt werden.  
+Anschließend habe ich mir ein Android Telefon ausgeliehen, die Entwickleroption + HCI Bluetooth Log aktiviert und die Smartness App (IOS[^7]) (Android[^8]) aufs Handy geladen.  
 Die smarte Dartscheibe eingeschaltet, die App geöffnet, mit der Dartscheibe verbunden und 3 Felder auf der Dartscheibe gedrückt.  Es ist sinnvoll den genauen Zeitstempel, wann ihr gedrückt habt, zu notieren, damit ihr hinterher im Log es einfacher habt zu suchen.  
 Danach das Telefon am Rechner angeschlossen und folgenden Befehl ausgeführt:  
 ```
 adb bugreport dart_bluetooth_report
 ```  
-Den Bugreport kann man anschließend entpacken und unter dem Verzeichnis (zumindest in meinem Fall, wenn ihr Probleme habt schaut unter Hilfreiche Links) `FS/data/misc/bluetooth/logs` mit Wireshark geöffnet.  
+Den Bugreport kann man anschließend entpacken und unter dem Verzeichnis (zumindest in meinem Fall, wenn ihr Probleme habt schaut hier[^10]) `FS/data/misc/bluetooth/logs` mit Wireshark geöffnet.  
 Im Log sind mir dann 3 Nachrichten aufgefallen, die direkt hintereinander standen und ich vermutete, dass es sich hier um meine 3 gedrückten Felder handelt:  
 ![Wireshark](doc/screenLogs/Wireshark.png)  
 
@@ -184,7 +184,7 @@ python src/bluetoothExplorer/findDevices.py
 ausführen und die MAC Herausfinden:  
 ![FindDevices](doc/screenLogs/FindDevices.png)  
 
-Dank ChatGPT habe ich dann ein Skript genommen, was mir die UUIDs aus dem Bluettoth Gerät ausgibt.  
+Dank ChatGPT[^11] habe ich dann ein Skript genommen, was mir die UUIDs aus dem Bluettoth Gerät ausgibt.  
 ```
 python src/bluetoothExplorer/findCharacteristics.py
 ```  
@@ -198,11 +198,11 @@ python /src/bluetoothExplorer/dartbleed.py
 ```  
 ![Dartbleed](doc/screenLogs/Dartbleed.png)  
 
-Dadurch habe ich auch herausgefunden, dass jedes Feld einzeln abgefragt wird. Bei alten Dartscheiben sind manchmal die 1x Felder zusammengefasst (siehe BuildOwnSmartboard).
+Dadurch habe ich auch herausgefunden, dass jedes Feld einzeln abgefragt wird. Bei alten Dartscheiben sind manchmal die 1x Felder zusammengefasst (siehe [hier](https://github.com/GittiMcHub/online-dart/tree/dev/tools/buildOwnSmartboard)). Für weitere Informationen zum Thema Bluetooth sind unten zu finden[^15].
 
 # Installation und How To Use (TODO)
 ## Dart-Broker
-Entweder habt ihr schon einen MQTT Broker am laufen oder ihr benötigt dafür Docker (https://docs.docker.com/engine/install/)  
+Entweder habt ihr schon einen MQTT Broker am laufen oder ihr benötigt dafür Docker[^12]   
 Das Image `eclipse-mosquitto:latest` herunterladen  
 Container Optional settings anpassen und starten:  
 `Ports: 1183 und 8083`  
@@ -214,6 +214,7 @@ Alternativ über die Kommandozeile mit
 ```
 docker run -p 8083:8083 -p 1883:1883 -v C:/(Pfad zum Ordner)/onlineDart/dart-broker/mosquitto.conf:/mosquitto/config/mosquitto.conf -v C:/(Pfad zum Ordner)/onlineDart/dart-broker/passwd:/mosquitto/config/passwd --name dartMQTTbroker eclipse-mosquitto:latest
 ```
+Zum testen könnt ihr einen MQTT Client ausführen und Nachrichten an den Broker schicken[^14].
 
 ## Dart-Client
 ### Dart-Client-Webapp
@@ -222,7 +223,7 @@ docker run -p 8083:8083 -p 1883:1883 -v C:/(Pfad zum Ordner)/onlineDart/dart-bro
 
 ## Dart-Server
 Es gibt unterschiedliche Serverimplementierungen, aus denen ihr auswählen könnt. Derzeit existieren nur Server in JAVA.  
-Dafür benötigt ihr openjdk (getestet mit Version 17.0.8.1 2023-08-24) und maven (https://maven.apache.org/install.html)   
+Dafür benötigt ihr openjdk (getestet mit Version 17.0.8.1 2023-08-24) und maven[^13]     
 ### Anthrax
 Im anthrax-server eure mqttbroker.conf Datei anpassen  
 `mqtt_broker_ip:IP.ADRESSE.BROKER.EINTRAGEN`  
@@ -305,11 +306,10 @@ python dartBlueMqttConnector.py
 ## Troubleshooting
 Wenn ihr Online gegeneinander spielt, achtet darauf, dass ihr euren Router und eure Firewall entsprechend konfiguriert. Auch wenn ihr den MQTT Broker auf einem anderen PC im LAN laufen lasst, kann es u.U. nötig sein die Firewall Einstellungen anzupassen.
 
-# Copyrights
+# Copyrights und Links
 Strafe sound: https://pixabay.com "Cash Register" from MAXOU-YT  
 180 sound: https://www.myinstants.com/de/instant/180-russ-bray-48439/  
 Alle anderen Sounds: Originalsound from Smartness Dartboard mit einem Iphone aufgezeichnet  
-Die Marke Smartness gehört der New Games & Sports (NG & S) GmbH  
 Animationen Web Client:  
 https://www.youtube.com/watch?v=emWCSpEDx8Y  
 https://www.youtube.com/watch?v=7HrmD_vIMIk  
@@ -318,35 +318,33 @@ https://giphy.com/gifs/VNOMtechniekenbouw-darts-raak-vnom-cNezWvIqgCYCevvLHi
 https://giphy.com/gifs/bbcamerica-funny-reaction-1lBIIjVOnY5YfdOnQe  
 https://giphy.com/gifs/funny-baby-winner-LFiOdYoOlEKac
 
-# Linksammlung
+[^4]: Die Marke Smartness gehört der New Games & Sports (NG & S) GmbH
 [^1]: Smartness Turbo Charger 4.0  
 https://shop.carromco.com/shop/dartboards/smart-connect-dartboard-turbo-charger-4-0/
 [^2]: Sunflex Smart Tec Dartscheibe:  
-https://www.amazon.de/Sunflex-Dartscheibe-Smart-elektronische-Ersatzspitzen/dp/B07X1TMMX4.
+https://www.amazon.de/Sunflex-Dartscheibe-Smart-elektronische-Ersatzspitzen/dp/B07X1TMMX4
 [^3]: Smartness Arcadia 4.0  
 https://shop.carromco.com/shop/dartboards/smart-connect-dartboard-arcadia-4-0/  
-[^4]: Original Smartness App Android:  
+[^8]: Original Smartness App Android:  
 https://play.google.com/store/apps/details?id=com.evisionhk.smartness&hl=de&gl=US  
-Original Smartness App IOS:  
+[^7]: Original Smartness App IOS:  
 https://apps.apple.com/de/app/smartness-electronic-dartboard/id1239487436  
-MQTT Explorer zum Testen:  
+[^14]: MQTT Explorer zum Testen:  
 http://mqtt-explorer.com/
-Maven Installieren:  
+[^13]: Maven Installieren:  
 https://maven.apache.org/install.html  
-Docker installieren:  
+[^12]: Docker installieren:  
 https://docs.docker.com/engine/install/  
-Bei Fragen:  
+[^11]: Bei Fragen:  
 https://chat.openai.com  
-Bluetooth Geräte Reverse Engineering:  
+[^9]: Wireshark:  
+https://www.wireshark.org/download.html  
+[^5]: Bluetooth Geräte Reverse Engineering:  
 https://hackernoon.com/de/Reverse-Engineering-von-LED-Leuchten-mit-Python%2C-um-Ihren-Computermonitor-in-einen-Umgebungsmonitor-umzuwandeln  
-Android HCI Snoop Log:  
+[^10]: Android HCI Snoop Log (Bei Problemen):  
 https://stackoverflow.com/questions/28445552/bluetooth-hci-snoop-log-not-generated  
-Android Plattform Tools:  
+[^6]: Android Plattform Tools:  
 https://developer.android.com/tools/releases/platform-tools  
-Thema Bluetooth Informationen:  
+[^15]: Thema Bluetooth Informationen:  
 http://docwiki.embarcadero.com/RADStudio/Sydney/de/Verwenden_von_Bluetooth_Low_Energy
 https://www.golem.de/news/golem-de-programmiert-bluetoothle-im-eigenbau-1404-105896.html  
-https://hackernoon.com/de/Reverse-Engineering-von-LED-Leuchten-mit-Python%2C-um-Ihren-Computermonitor-in-einen-Umgebungsmonitor-umzuwandeln  
-Mit meinem Android kam ich einfach nicht an das HCI Snoop Log:  
-(geholfen hat bei mir einfach ein anderes Android Telefon zu nehmen.)  
-https://stackoverflow.com/questions/28445552/bluetooth-hci-snoop-log-not-generated  
