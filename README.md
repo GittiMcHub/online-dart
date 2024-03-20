@@ -125,9 +125,9 @@ Werte für weitere Würfe / Funktionen
 
 # Smart Dartboard Übersetzungstabelle 
 Wir gehen davon aus, dass alle smarten Dartboards den selben Chip verwenden. Folgend die Auflistung mit denen wir es getestet haben:  
-- [x] Smartness Turbo Charger 4.0 Smart connect Dartboard[^3] (https://shop.carromco.com/shop/dartboards/smart-connect-dartboard-turbo-charger-4-0/)  
-- [x] Sunflex Smart Tec (https://www.amazon.de/Sunflex-Dartscheibe-Smart-elektronische-Ersatzspitzen/dp/B07X1TMMX4)  
-- [ ] Smartness Arcadia 4.0 Smart connect Dartboard (https://shop.carromco.com/shop/dartboards/smart-connect-dartboard-arcadia-4-0/)  
+- [x] Smartness Turbo Charger 4.0 Smart connect Dartboard[^1]  
+- [x] Sunflex Smart Tec[^2]  
+- [ ] Smartness Arcadia 4.0 Smart connect Dartboard[^3]  
   
 Name des Bluetoothchips: `Smartness1`  
 UUID: `0000ffe1-0000-1000-8000-00805f9b34fb`  
@@ -319,9 +319,13 @@ https://giphy.com/gifs/bbcamerica-funny-reaction-1lBIIjVOnY5YfdOnQe
 https://giphy.com/gifs/funny-baby-winner-LFiOdYoOlEKac
 
 # Linksammlung
-[^3]: Sunflex Smart Tec Dartscheibe:  
-https://www.amazon.de/Sunflex-Dartscheibe-Smart-elektronische-Ersatzspitzen/dp/B07X1TMMX4  
-Original Smartness App Android:  
+[^1]: Smartness Turbo Charger 4.0  
+https://shop.carromco.com/shop/dartboards/smart-connect-dartboard-turbo-charger-4-0/
+[^2]: Sunflex Smart Tec Dartscheibe:  
+https://www.amazon.de/Sunflex-Dartscheibe-Smart-elektronische-Ersatzspitzen/dp/B07X1TMMX4.
+[^3]: Smartness Arcadia 4.0  
+https://shop.carromco.com/shop/dartboards/smart-connect-dartboard-arcadia-4-0/  
+[^4]: Original Smartness App Android:  
 https://play.google.com/store/apps/details?id=com.evisionhk.smartness&hl=de&gl=US  
 Original Smartness App IOS:  
 https://apps.apple.com/de/app/smartness-electronic-dartboard/id1239487436  
