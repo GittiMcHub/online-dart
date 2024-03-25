@@ -21,7 +21,10 @@ Zum testen ist dort ein offline Client in python bereitgestellt. Dies war der er
 ### dartBlueMqttConnector
 Diese in Python geschriebene Komponente verbindet sich via Bluetooth LE mit der Dartscheibe und übersetzt die betätigten Tasten (Hex Werte) der Dartscheibe in einen String um (siehe Abschnitt: Dartboard Value Übersetzung (Interface)). Anschließend wird der String an einen MQTT-Broker published. Unter `config` müsst ihr die MAC und UUID des Dartboards angeben, sowie die Daten für den MQTT Broker. 
 Außerdem müsst ihr die Dartboard ID eingeben. Diese Nummer könnt ihr frei wählen.  
-Im Server müsst ihr zu jedem Spieler auch die Dartboard ID angeben. Alle Spieler und Dartscheiben können die selbe Dartboard ID nutzen (immer, wenn es nur eine Dartscheibe für das Spiel gibt). Wenn mehrere Dartscheiben für das Spiel zur Verfügung stehen, dann können unterschiedliche Dartboard IDs vergeben werden. Das hat den Vorteil, dass die Eingaben von Darscheibe 1 nicht für Spieler zählen, die der Dartscheibe 2 zugeordnet sind.   
+Im Server müsst ihr zu jedem Spieler auch die Dartboard ID angeben. Alle Spieler und Dartscheiben können die selbe Dartboard ID nutzen (immer, wenn es nur eine Dartscheibe für das Spiel gibt). Wenn mehrere Dartscheiben für das Spiel zur Verfügung stehen, dann können unterschiedliche Dartboard IDs vergeben werden. Das hat den Vorteil, dass die Eingaben von Darscheibe 1 nicht für Spieler zählen, die der Dartscheibe 2 zugeordnet sind. 
+### dartAndroidMqttConnector
+Diese Android App wurde für Android 10 bzw. mit der TargetAPI 31 erstellt. Als Alternative zur in Python geschriebenen Komponente.  
+![AndroidAppSchritt1-3](doc/screenLogs/androidapp.png) 
 ## dart-broker 
 Hier findet ihr die vorkonfigurierte mosquitto.conf und passw-Datei für das eclipse-mosquitto Docker-Image.
 ## dart-client
@@ -50,6 +53,9 @@ Python 3.9.7
 paho-mqtt 1.6.1  
 bleak 0.21.1  
 async-timeout 4.0.3  
+
+## dartAndroidMQTTConnector
+Android 10 (Android Q) / TargetAPI 31
 
 ## Dart-Broker
 Docker  
@@ -216,14 +222,15 @@ docker run -p 8083:8083 -p 1883:1883 -v C:/(Pfad zum Ordner)/onlineDart/dart-bro
 Zum testen könnt ihr einen MQTT Client ausführen und Nachrichten an den Broker schicken[^14].
 
 ## Dart-Client
+Derzeit nur eine funktionsfähige UI-Anwendung.
 ### Dart-Client-Webapp
 `index.html` mit einem Editor öffnen und die MQTT Broker Daten und die ID eintragen  
 `index.html` mit einem Browser öffnen
 
 ## Dart-Server
-Es gibt unterschiedliche Serverimplementierungen, aus denen ihr auswählen könnt. Derzeit existieren nur Server in JAVA.  
-Dafür benötigt ihr openjdk[^16] (getestet mit Version 17.0.8.1 2023-08-24) und maven[^13]     
+Es gibt unterschiedliche Serverimplementierungen, aus denen ihr auswählen könnt. Derzeit existieren nur Server in JAVA.     
 ### Anthrax
+Dafür benötigt ihr openjdk[^16] (getestet mit Version 17.0.8.1 2023-08-24) und maven[^13]  
 Im anthrax-server eure mqttbroker.conf Datei anpassen  
 `mqtt_broker_ip:IP.ADRESSE.BROKER.EINTRAGEN`  
 `mqtt_broker_port:1883`  
@@ -282,6 +289,7 @@ TODO
  
 
 ## Dart-Board-Connector
+Wahl zwischen bluetoothfähigen Laptop/PC (python Skript) oder Android Telefon (Java App).
 ### DartblueMQTTConnector
 Ihr benötigt für den Dart-Board-Connector ein Bluetooth fähiges Gerät und Python in der Version `3.9.7`[^17]  
 Zusätzlich müsst ihr die erforderlichen Bibliotheken über PIP installieren  
@@ -300,7 +308,9 @@ Dartscheibe einschalten.
 Mit folgendem Befehl den Connector starten:  
 ```
 python dartBlueMqttConnector.py
-```
+```  
+### DartAndroidMQTTConnector
+Entweder mit Android Studio öffnen und auf das Handy übertragen oder die APK auf das Handy ziehen (Release TODO). Die App ist im grunde selbsterklärend: MQTT Broker und Dartboard Einstellungen anpassen und die Buttons drücken.  
 
 ## Troubleshooting
 Wenn ihr Online gegeneinander spielt, achtet darauf, dass ihr euren Router und eure Firewall entsprechend konfiguriert. Auch wenn ihr den MQTT Broker auf einem anderen PC im LAN laufen lasst, kann es u.U. nötig sein die Firewall Einstellungen anzupassen.
