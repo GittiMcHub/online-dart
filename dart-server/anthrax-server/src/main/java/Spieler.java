@@ -42,7 +42,8 @@ public class Spieler {
             this.setFreieWuerfe(0);
         }else { // Wurf ergab Punkte und die Punkte werden jetzt gezählt
             int multiplikator = Character.getNumericValue(wurfValue.charAt(0));
-            int wert = (Character.getNumericValue(wurfValue.charAt(1)) * 10 + Character.getNumericValue(wurfValue.charAt(2))) * multiplikator;
+            int feldwert = (Character.getNumericValue(wurfValue.charAt(1)) * 10 + Character.getNumericValue(wurfValue.charAt(2)));
+            int wert = feldwert * multiplikator;
 
             // ### Statistik 1ner Double Triple
             if(wurfValue.equals("125")){
@@ -64,6 +65,7 @@ public class Spieler {
             }
 
             // ### Statistik Ende
+            this.statistik.addGetroffenesFeld(multiplikator,feldwert);
             this.statistik.calculateAvg(wert);
             this.setPunktestand(this.getPunktestand() - wert);
         }

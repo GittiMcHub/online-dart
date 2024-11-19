@@ -34,7 +34,14 @@ Leider sind wir keine Webentwickeler und es ist sehr primitiv: Ein Webclient fü
 Ein MQTT Client wird im Browser gestartet und empfängt die Gamedaten vom Anthrax Server und zeigt diese an. Die Buttons werden an den Server .  
 ![Webclient](doc/screenLogs/dart-client-webapp.png)  
 Die Statistik-Seite
-![Webclient Statistik](doc/screenLogs/dart-client-webapp-statistik.png)  
+![Webclient Statistik](doc/screenLogs/dart-client-webapp-statistik.png)
+### currentPlayerPoints-client
+Falls die Anzeige für die aktuellen eigenen Highscore zu klein ist, lässt sich dies auf einem anderen Monitor darstellen  
+![Webclient Statistik](doc/screenLogs/currentplayerpoints.png)
+### currentPlayerHitpic-client
+Für Übungszwecke mittels Benutzer für verschiedene Felder und versuchen beim jeweiligen Benutzer die Felder zu treffen, lassen sich zum aktuellen Player das Wurfbild anzeigen. Zwischen inner und outer Single Feldern wird derzeit nicht unterschieden.  
+![Webclient Statistik](doc/screenLogs/hitpic.png)  
+### 
 ## dart-server
 ### Anthrax
 Ein in Java implementierter Server, der sich auf die Dartboards subscribed und die Gamedaten published. Die MQTT Config muss angepasst werden.
@@ -235,7 +242,7 @@ Im anthrax-server eure mqttbroker.conf Datei anpassen
 `mqtt_broker_ip:IP.ADRESSE.BROKER.EINTRAGEN`  
 `mqtt_broker_port:1883`  
 `mqtt_username:dartboard`  
-`mqtt_password:smartness`
+`mqtt_password:smartness`  
 `mqtt_qos:0`  
 Der QoS kann nicht besser sein, als er auf dem Topic published wird. In dem Fall muss in dem Dartboard-Connector der QoS entsprechend eingestellt sein.
 
