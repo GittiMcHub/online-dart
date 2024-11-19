@@ -235,7 +235,9 @@ Im anthrax-server eure mqttbroker.conf Datei anpassen
 `mqtt_broker_ip:IP.ADRESSE.BROKER.EINTRAGEN`  
 `mqtt_broker_port:1883`  
 `mqtt_username:dartboard`  
-`mqtt_password:smartness`  
+`mqtt_password:smartness`
+`mqtt_qos:0`  
+Der QoS kann nicht besser sein, als er auf dem Topic published wird. In dem Fall muss in dem Dartboard-Connector der QoS entsprechend eingestellt sein.
 
 Mit dem Befehl im Projektordner 
 ```

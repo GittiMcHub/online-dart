@@ -11,6 +11,7 @@ public class ConfigReader {
     private String brokerPort;
     private String user;
     private String password;
+    private String qos;
     private final String clientID = "server";
     private final String topic = "dartboard/#";
 
@@ -23,6 +24,7 @@ public class ConfigReader {
             this.brokerPort = properties.getProperty("mqtt_broker_port");
             this.user = properties.getProperty("mqtt_username");
             this.password = properties.getProperty("mqtt_password");
+            this.qos = properties.getProperty("mqtt_qos");
         }catch (Exception ex){
             ex.printStackTrace();
         }
@@ -61,5 +63,8 @@ public class ConfigReader {
 
     public String getTopic() {
         return topic;
+    }
+    public int getQos(){
+        return Integer.parseInt(this.qos);
     }
 }

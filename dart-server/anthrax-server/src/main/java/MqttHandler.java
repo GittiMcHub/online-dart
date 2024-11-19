@@ -59,7 +59,7 @@ public class MqttHandler implements Runnable {
             }else{
                 System.out.println("[MQTT-Handler] Not Connected to MQTT Broker!");
             }
-            client.subscribe(this.configReader.getTopic(), 2);
+            client.subscribe(this.configReader.getTopic(), this.configReader.getQos());
 
         }catch (Exception ex){
             ex.printStackTrace();
