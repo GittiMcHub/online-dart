@@ -37,10 +37,13 @@ Die Statistik-Seite
 ![Webclient Statistik](doc/screenLogs/dart-client-webapp-statistik.png)
 ### currentPlayerPoints-client
 Falls die Anzeige für die aktuellen eigenen Highscore zu klein ist, lässt sich dies auf einem anderen Monitor darstellen  
-![Webclient Statistik](doc/screenLogs/currentplayerpoints.png)
+![Python currentPlayerPoint](doc/screenLogs/currentplayerpoints.png)
 ### currentPlayerHitpic-client
 Für Übungszwecke mittels Benutzer für verschiedene Felder und versuchen beim jeweiligen Benutzer die Felder zu treffen, lassen sich zum aktuellen Player das Wurfbild anzeigen. Zwischen inner und outer Single Feldern wird derzeit nicht unterschieden.  
-![Webclient Statistik](doc/screenLogs/hitpic.png)  
+![Python Hitpic](doc/screenLogs/hitpic.png)  
+### java-ui-client
+Vereint currentPlayerPoints, currentPlayerHitpic und die Statistik Seite in eine Javaanwendung. Mit MQTT Config zur Laufzeit statt Configfile.  
+![javaclient](doc/screenLogs/java-ui-client.png)  
 ### 
 ## dart-server
 ### Anthrax
