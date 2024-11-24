@@ -8,7 +8,7 @@ import json
 
 
 # MQTT-Broker Einstellungen
-broker = '10.0.14.68'  # Ändere das entsprechend deinem MQTT-Broker
+broker = '127.0.0.1'  # Ändere das entsprechend deinem MQTT-Broker
 port = 1883
 user = 'dartboard'
 password = 'smartness'
