@@ -4,7 +4,7 @@ public class MainFrame extends JFrame {
     private GameConfigPanel gameconfig;
 
     public MainFrame() {
-        setTitle("Dartboard GUI");
+        setTitle("Dartboard Java-UI anthrax-v0.1.1");
         setSize(800, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(true);
@@ -14,7 +14,7 @@ public class MainFrame extends JFrame {
 
         // Tabs hinzufügen
         this.gameconfig = GameConfigPanel.getInstance();
-        tabbedPane.add("Übersicht", this.gameconfig);
+        tabbedPane.add("Config", this.gameconfig);
         // TAB aktueller Spieler
         tabbedPane.add("Aktueller Spieler", new CurrentPlayerPanel());
         // TAB Trefferverteilung
@@ -26,6 +26,7 @@ public class MainFrame extends JFrame {
         tabbedPane.add("Statistik", scrollPane);
         // Ohne Scrollbalken
         //tabbedPane.add("Statistik", new StatistikPanel());
+        tabbedPane.add("Game Server", new GameServerPanel());
 
         add(tabbedPane);
     }

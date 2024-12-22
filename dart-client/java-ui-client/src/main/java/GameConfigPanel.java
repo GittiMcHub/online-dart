@@ -40,7 +40,7 @@ public class GameConfigPanel extends JPanel {
         formPanel.add(passwordField);
 
         formPanel.add(new JLabel("Client-ID:"));
-        clientIdField = new JTextField("java-dart-client");
+        clientIdField = new JTextField("java-dart-ui-client");
         formPanel.add(clientIdField);
 
         formPanel.add(new JLabel("QoS:"));
@@ -51,6 +51,7 @@ public class GameConfigPanel extends JPanel {
         formPanel.add(new JLabel("Sound:"));
         soundCheckbox = new JCheckBox("",true);
         formPanel.add(soundCheckbox);
+
 
         ausgabeText = new JLabel("Noch nicht verbunden");
         formPanel.add(ausgabeText);
@@ -100,4 +101,15 @@ public class GameConfigPanel extends JPanel {
     public MQTTClient getMqttClient() {
         return mqttClient;
     }
+    public String getIpAddressField() {return ipAddressField.getText(); }
+
+    public String getPortField() {return portField.getText();}
+
+    public String getUserField() {return userField.getText();}
+
+    public String getPasswordField() {return passwordField.getText();}
+
+    public String getClientIdField() {return clientIdField.getText();}
+
+    public int getQosComboBox() {return (int)qosComboBox.getSelectedItem();}
 }
