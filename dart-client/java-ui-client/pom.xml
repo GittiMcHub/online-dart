@@ -7,6 +7,13 @@
     <groupId>org.dart-ui</groupId>
     <artifactId>java-ui-client</artifactId>
     <version>1.0-SNAPSHOT</version>
+
+    <scm>
+        <connection>scm:git:https://github.com/GittiMcHub/online-dart.git</connection>
+        <developerConnection>scm:git:https://github.com/GittiMcHub/online-dart.git</developerConnection>
+        <url>https://github.com/benutzername/repository-name</url>
+    </scm>
+
     <build>
         <plugins>
             <plugin>
