@@ -9,6 +9,8 @@ public class MqttHandler implements Runnable {
     private final SharedData data;
     private MqttClient client;
     private MqttConnectOptions options;
+    private String topic;
+    private int qos;
     private ConfigReader configReader;
 
     public MqttHandler(SharedData sharedData){
@@ -21,6 +23,24 @@ public class MqttHandler implements Runnable {
             this.options.setAutomaticReconnect(true);
             this.options.setPassword(configReader.getPassword().toCharArray());
             this.options.setUserName(configReader.getUser());
+            this.qos = configReader.getQos();
+            this.topic = configReader.getTopic();
+        } catch (MqttException e) {
+            System.out.println("[MQTT-Handler] ERROR im Konstruktor");
+            throw new RuntimeException(e);
+        }
+    }
+    public MqttHandler(SharedData sharedData, String mqttbrokerIp, String mqttbrokerPort, String mqttUser, String mqttPassword,  String mqttClientId, int qos){
+        this.data = sharedData;
+        String broker = "tcp://" + mqttbrokerIp + ":" + mqttbrokerPort;
+        try {
+            client = new MqttClient(broker, mqttClientId);
+            this.options = new MqttConnectOptions();
+            this.options.setAutomaticReconnect(true);
+            this.options.setPassword(mqttPassword.toCharArray());
+            this.options.setUserName(mqttUser);
+            this.qos = qos;
+            this.topic = "dartboard/#";
         } catch (MqttException e) {
             System.out.println("[MQTT-Handler] ERROR im Konstruktor");
             throw new RuntimeException(e);
@@ -59,7 +79,7 @@ public class MqttHandler implements Runnable {
             }else{
                 System.out.println("[MQTT-Handler] Not Connected to MQTT Broker!");
             }
-            client.subscribe(this.configReader.getTopic(), this.configReader.getQos());
+            client.subscribe(this.topic, this.qos);
 
         }catch (Exception ex){
             ex.printStackTrace();
