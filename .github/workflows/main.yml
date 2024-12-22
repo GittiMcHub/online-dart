@@ -1,0 +1,22 @@
+name: Create Release on Merge to Master
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - 'v*'
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Build and release project 1
+      working-directory: ./dart-client/java-ui-client
+      run: |
+        mvn clean package
+        mvn release:prepare
+        mvn release:perform
