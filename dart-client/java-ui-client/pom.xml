@@ -11,7 +11,7 @@
     <scm>
         <connection>scm:git:https://github.com/GittiMcHub/online-dart.git</connection>
         <developerConnection>scm:git:https://github.com/GittiMcHub/online-dart.git</developerConnection>
-        <url>https://github.com/benutzername/repository-name</url>
+        <url>https://github.com/GittiMcHub/online-dart</url>
     </scm>
 
     <build>
