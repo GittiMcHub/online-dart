@@ -21,9 +21,9 @@ jobs:
     - name: Build and release project 1
       working-directory: ./dart-client/java-ui-client
       run: |
-        echo $SETTINGSXML  > ~/.m2/settings.xml
-        mvn clean package
-        mvn deploy
+        echo $SETTINGSXML  > settings.xml
+        mvn --settings settings.xml clean package
+        mvn --settings settings.xml deploy
 
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # GitHub Token, um das Release zu veröffentlichen
