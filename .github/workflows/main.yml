@@ -2,8 +2,6 @@ name: Create Release on Merge to Master
 
 on:
   push:
-    branches:
-      - master
     tags:
       - 'v*'
 jobs:
@@ -21,12 +19,14 @@ jobs:
     - name: Build and release project 1
       working-directory: ./dart-client/java-ui-client
       run: |
+        echo $GIT_TAG
         echo $SETTINGSXML  > settings.xml
+        sed -i "s/1.0-SNAPSHOT/$GIT_TAG/g" pom.xml
         mvn --settings settings.xml clean package
         mvn --settings settings.xml deploy
 
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # GitHub Token, um das Release zu veröffentlichen
         SETTINGSXML: ${{ secrets.SETTINGSXML }}
-      
+        GIT_TAG: ${{ github.ref_name }}
         
