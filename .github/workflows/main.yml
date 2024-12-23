@@ -1,0 +1,32 @@
+name: Create Release on Merge to Master
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - 'v*'
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Build and release project 1
+      working-directory: ./dart-client/java-ui-client
+      run: |
+        mvn clean package
+        mvn release:prepare
+        mvn release:perform
+
+    - name: Create Release
+      run: |
+        git tag -a v${{ github.sha }} -m "Release of commit ${{ github.sha }}"
+        git push origin v${{ github.sha }}
+        
+    - name: Publish Release
+      uses: softprops/action-gh-release@v1  # Verwendet das GitHub-Release Action-Plugin, um das Release zu veröffentlichen
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # GitHub Token, um das Release zu veröffentlichen
