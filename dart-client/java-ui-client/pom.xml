@@ -8,6 +8,14 @@
     <artifactId>java-ui-client</artifactId>
     <version>1.0-SNAPSHOT</version>
 
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>Gittimchub</name>
+            <url>https://maven.pkg.github.com/GittiMcHub/online-dart</url>
+        </repository>
+    </distributionManagement>
+
     <scm>
         <connection>scm:git:https://github.com/GittiMcHub/online-dart.git</connection>
         <developerConnection>scm:git:https://github.com/GittiMcHub/online-dart.git</developerConnection>
