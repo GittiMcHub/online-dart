@@ -67,7 +67,7 @@ public class GameServerPanel extends JPanel {
                     command.add("/c");
                     command.add("start");
                 }
-                
+
                 command.add("java");
                 command.add("-jar");
                 command.add(jarPath);
@@ -92,8 +92,6 @@ public class GameServerPanel extends JPanel {
                 command.add("-kostenstrafpunkte");
                 command.add(kostenStrafpunkteField.getText());
 
-                // Ausgabe in Datei umleiten
-                String logFile = "server_output.log";
                 ProcessBuilder processBuilder = new ProcessBuilder(command);
                 processBuilder.redirectErrorStream(true);
 

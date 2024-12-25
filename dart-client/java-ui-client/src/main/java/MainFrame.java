@@ -27,6 +27,7 @@ public class MainFrame extends JFrame {
         // Ohne Scrollbalken
         //tabbedPane.add("Statistik", new StatistikPanel());
         tabbedPane.add("Game Server", new GameServerPanel());
+        tabbedPane.add("Board Connector", new DartboardConnectorPanel());
 
         add(tabbedPane);
     }
