@@ -103,5 +103,8 @@ venv.bak/
 # mkdocs documentation
 /site
 
+# VSCode kram
+./vscode
+
 # mypy
 .mypy_cache/
