@@ -3,11 +3,11 @@ import asyncio
 from bleak import BleakClient
 import time
 import threading
+import argparse
 
 MQTT_CONFIG_FILE = "./config/mqttbroker.conf"
-TOPIC_DARTBOARD = "dartboard/"
-QOS = 2
 DARTBOARD_CONFIG_FILE = "./config/dartboard.conf"
+TOPIC_DARTBOARD = "dartboard/"
 
 hex_mapping = {
     # Felder Außen
@@ -101,10 +101,21 @@ hex_mapping = {
 }
 
 class DartBlueMqttConnector():
-
-    def __init__(self):
-        self.read_mqtt_config()
-        self.read_dartboard_config()
+    def __init__(self, mqtt_ip=None, mqtt_port=None, mqtt_user=None, mqtt_pw=None, mqtt_qos=None, dartboard_mac=None, dartboard_uuid=None, dartboard_id=None):
+        # Wenn Skript mit Argumenten aufgerufen wurde, dann die Werte aus den Argumenten setzen
+        if (mqtt_ip and mqtt_port and mqtt_user and mqtt_pw and mqtt_qos and dartboard_mac and dartboard_uuid and dartboard_id):
+            self.MQTT_BROKER_IP = mqtt_ip
+            self.MQTT_BROKER_PORT = mqtt_port
+            self.USERNAME = mqtt_user
+            self.PASSWORT = mqtt_pw
+            self.QOS = mqtt_qos
+            self.DARTBOARD_MAC = dartboard_mac
+            self.DARTBOARD_UUID = dartboard_uuid
+            self.DARTBOARD_ID = dartboard_id
+        else:
+            self.read_mqtt_config()
+            self.read_dartboard_config()
+            
         self.publishTopic = TOPIC_DARTBOARD + str(self.DARTBOARD_ID)
         self.mqttc = mqtt.Client(protocol=mqtt.MQTTv311)
         self.mqttc.username_pw_set(self.USERNAME, self.PASSWORT)
@@ -121,6 +132,7 @@ class DartBlueMqttConnector():
             self.MQTT_BROKER_PORT = int(lines[1].split(":")[1].strip())
             self.USERNAME = lines[2].split(":")[1].strip()
             self.PASSWORT = lines[3].split(":")[1].strip()
+            self.QOS = lines[4].split(":")[1].strip()
 
     # Funktion zum Lesen der Dartboard-Informationen aus der Datei
     def read_dartboard_config(self):
@@ -134,7 +146,7 @@ class DartBlueMqttConnector():
     async def handle_notifications(self,sender: int, data: bytearray):
         print(f"Received data from handle {sender}: {data.hex()}")
         value = hex_mapping.get(data.hex(), "999")
-        self.mqttc.publish(self.publishTopic, value, qos=QOS)
+        self.mqttc.publish(self.publishTopic, value, qos=self.QOS)
         print("Value: "+ value +" published.")
 
     async def connect_and_subscribe(self):
@@ -176,11 +188,31 @@ class DartBlueMqttConnector():
             time.sleep(5)
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="MQTT and Dartboard Connector")
+    parser.add_argument("--mqtt_host", type=str, required=False, help="MQTT broker hostname or IP address")
+    parser.add_argument("--mqtt_port", type=int, required=False, help="MQTT broker port")
+    parser.add_argument("--mqtt_username", type=str, required=False, help="MQTT broker username")
+    parser.add_argument("--mqtt_password", type=str, required=False, help="MQTT broker password")
+    parser.add_argument("--mqtt_qos", type=str, required=False, help="MQTT broker Quality of Service")
+
+    parser.add_argument("--dartboard_mac", type=str, required=False, help="Dartboard MAC-Adresse")
+    #uuid should be 0000ffe1-0000-1000-8000-00805f9b34fb
+    parser.add_argument("--dartboard_uuid", type=str, required=False, help="Dartboard Bluetooth UUID")
+    parser.add_argument("--dartboard_id", type=str, required=False, help="Dartboard id")
+
+    args = parser.parse_args()
+
+    if(args.mqtt_host and args.mqtt_port and args.mqtt_username and args.mqtt_password and args.mqtt_qos and args.dartboard_mac and args.dartboard_uuid and args.dartboard_id):
+        connector = DartBlueMqttConnector(args.mqtt_host, args.mqtt_port, args.mqtt_username, args.mqtt_password, args.mqtt_qos, args.dartboard_mac, args.dartboard_uuid, args.dartboard_id)
+    else:
+        connector = DartBlueMqttConnector()
+    
     loop = asyncio.get_event_loop()
     connector = DartBlueMqttConnector()
     # Starten Sie den Reconnect-Mechanismus in einem separaten Thread
     threading.Thread(target=connector.reconnect_mqtt, daemon=True).start()
     threading.Thread(target=connector.reconnect_bt, daemon=True).start()
+
     while True:
         print("Main Thread läuft noch")
         time.sleep(60)
