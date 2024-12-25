@@ -58,9 +58,16 @@ public class GameServerPanel extends JPanel {
                 String jarPath = "anthrax-v0.1.1.jar";
 
                 List<String> command = new ArrayList<>();
-                command.add("cmd");
-                command.add("/c");
-                command.add("start");
+                // Bestimmen des Betriebssystems
+                String os = System.getProperty("os.name").toLowerCase();
+
+                // Windows benötigt "cmd /c", andere Betriebssysteme nicht
+                if (os.contains("win")) {
+                    command.add("cmd");
+                    command.add("/c");
+                    command.add("start");
+                }
+                
                 command.add("java");
                 command.add("-jar");
                 command.add(jarPath);
