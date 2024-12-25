@@ -51,7 +51,7 @@ public class DartboardConnectorPanel extends JPanel {
     private void startDartboardConnector() {
         new Thread(() -> {
             try {
-                String jarPath = "dartBlueMqttConnector-v0.1.1.py";
+                String jarPath = "dartBlueMqttConnector-v0.1.2.py";
 
                 List<String> command = new ArrayList<>();
                 // Bestimmen des Betriebssystems
