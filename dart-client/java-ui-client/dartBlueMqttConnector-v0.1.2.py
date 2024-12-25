@@ -208,7 +208,6 @@ if __name__ == "__main__":
         connector = DartBlueMqttConnector()
     
     loop = asyncio.get_event_loop()
-    connector = DartBlueMqttConnector()
     # Starten Sie den Reconnect-Mechanismus in einem separaten Thread
     threading.Thread(target=connector.reconnect_mqtt, daemon=True).start()
     threading.Thread(target=connector.reconnect_bt, daemon=True).start()

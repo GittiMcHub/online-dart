@@ -11,7 +11,7 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args" : ["--mqttbrokerip", "127.0.0.1", "--mqttbrokerport", "1883", "--mqttuser", "dartboard", "--mqttpassword", "smartness", "--mqttqos", "0", 
+            "args" : ["--mqttbrokerip", "10.0.1.1", "--mqttbrokerport", "1883", "--mqttuser", "dartboard", "--mqttpassword", "smartness", "--mqttqos", "0", 
             "--dartboard_mac", "64:CF:D9:3A:E0:C1", "--dartboard_uuid", "0000ffe1-0000-1000-8000-00805f9b34fb", "--dartboard_id", "1", ]
         }
     ]
