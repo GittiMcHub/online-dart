@@ -42,7 +42,7 @@ public class CurrentPlayerPanel extends JPanel implements PropertyChangeListener
             punktestandLabel.setText(String.valueOf(gameData.getCurrentPlayer().getPunktestand()));
             // Update des letzten Wurfs
             int letzterWurf = gameData.getLetzterWurf();
-            int gesamt = gameData.getPunkteSpielzug() + letzterWurf; // Berechnung der Gesamtsumme
+            int gesamt = gameData.getPunkteSpielzug(); // Berechnung der Gesamtsumme
             letzterwurfLabel.setText("Letzter Wurf: " + letzterWurf + " Ges. " + gesamt);
         }
     }
