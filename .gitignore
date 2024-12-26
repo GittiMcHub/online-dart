@@ -103,5 +103,11 @@ venv.bak/
 # mkdocs documentation
 /site
 
+# VSCode kram
+.vscode/
+
 # mypy
 .mypy_cache/
+
+#BehilfsDatei für MAC Adresse Dartboard
+findDevices.log

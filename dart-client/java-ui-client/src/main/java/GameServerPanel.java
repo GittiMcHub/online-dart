@@ -58,11 +58,24 @@ public class GameServerPanel extends JPanel {
                 String jarPath = "anthrax-v0.1.1.jar";
 
                 List<String> command = new ArrayList<>();
-                command.add("cmd");
-                command.add("/c");
-                command.add("start");
-                command.add("java");
-                command.add("-jar");
+                // Bestimmen des Betriebssystems
+                String os = System.getProperty("os.name").toLowerCase();
+
+                // Windows benötigt "cmd /c", andere Betriebssysteme nicht
+                if (os.contains("win")) {
+                    command.add("cmd");
+                    command.add("/c");
+                    command.add("start");
+                } else if (os.contains("linux") || os.contains("mac")) {
+                    // Unter Linux/Mac: Neues Terminal öffnen
+                    command.add("gnome-terminal"); // Erfordert GNOME-Terminal
+                    command.add("--");
+                    command.add("java");
+                    command.add("-jar");
+                } else {
+                    throw new UnsupportedOperationException("Betriebssystem nicht unterstützt.");
+                }
+
                 command.add(jarPath);
                 command.add("-mqttbrokerip");
                 command.add(GameConfigPanel.getInstance().getIpAddressField());
@@ -85,8 +98,6 @@ public class GameServerPanel extends JPanel {
                 command.add("-kostenstrafpunkte");
                 command.add(kostenStrafpunkteField.getText());
 
-                // Ausgabe in Datei umleiten
-                String logFile = "server_output.log";
                 ProcessBuilder processBuilder = new ProcessBuilder(command);
                 processBuilder.redirectErrorStream(true);
 
