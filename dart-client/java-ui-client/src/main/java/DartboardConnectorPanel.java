@@ -1,5 +1,9 @@
 import javax.swing.*;
 import java.awt.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,18 +14,25 @@ public class DartboardConnectorPanel extends JPanel {
     private JComboBox<Integer> dartboardIdCombobox;
     private JLabel ausgabeText;
 
+    private JLabel macAddressFieldLabel;
+
 
     public DartboardConnectorPanel(){
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         // Panel für Eingabefelder
-        JPanel formPanel = new JPanel(new GridLayout(5, 2, 10, 10));
+        JPanel formPanel = new JPanel(new GridLayout(6, 2, 10, 10));
 
         // Felder hinzufügen
         formPanel.add(new JLabel("MAC-Adresse:"));
         dartboardMacField = new JTextField("64:CF:D9:3A:E0:C1");
         formPanel.add(dartboardMacField);
+        // Button erstellen
+        macAddressFieldLabel = new JLabel("MAC-Adresse suchen:");
+        formPanel.add(macAddressFieldLabel);
+        JButton discoverButton = new JButton("MAC-Adresse Dartboard suchen");
+        formPanel.add(discoverButton);
 
         // Felder hinzufügen
         formPanel.add(new JLabel("Bluetooth UUID:"));
@@ -35,17 +46,18 @@ public class DartboardConnectorPanel extends JPanel {
         formPanel.add(dartboardIdCombobox);
 
         formPanel.add(new JLabel("MQTT Einstellungen wie Config Seite"));
-        ausgabeText = new JLabel("Dartboard Connector noch nicht gestartet");
+        ausgabeText = new JLabel("Dartboard Connector noch nicht gestartet.");
         formPanel.add(ausgabeText);
 
         add(formPanel, BorderLayout.CENTER);
 
         // Button erstellen
-        JButton connectButton = new JButton("Dartboard Connector starten");
+        JButton connectButton = new JButton("Dartboard Connector starten (Dartboard LED muss Rot sein)");
         add(connectButton, BorderLayout.SOUTH);
 
         // Button-ActionListener
         connectButton.addActionListener(e -> startDartboardConnector());
+        discoverButton.addActionListener(e -> discoverDartboard());
     }
 
     private void startDartboardConnector() {
@@ -91,6 +103,14 @@ public class DartboardConnectorPanel extends JPanel {
                 ausgabeText.setText("Connector starten...");
                 Process process = processBuilder.start();
 
+                // Shutdown-Hook hinzufügen
+                Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                    if (process.isAlive()) {
+                        process.destroy(); // Prozess beenden
+                        System.out.println("Connector-Prozess beendet.");
+                    }
+                }));
+
                 ausgabeText.setText("Connector gestartet.");
                 int exitCode = process.waitFor();
                 System.out.println("Connector exited with code: " + exitCode);
@@ -99,6 +119,75 @@ public class DartboardConnectorPanel extends JPanel {
                 ausgabeText.setText("Fehler beim starten des Connectors.");
             }
         }).start();
+    }
+    private void discoverDartboard() {
+        new Thread(() -> {
+            try {
+                macAddressFieldLabel.setText("Suche MAC-Adresse Dartboard...");
+                String jarPath = "findDevices-v0.1.2.py";
+                String outputFilePath = "findDevices.log";
+
+                List<String> command = new ArrayList<>();
+                // Bestimmen des Betriebssystems
+                String os = System.getProperty("os.name").toLowerCase();
+
+                if (os.contains("win")) {
+                    // Für Windows
+                    command.add("cmd");
+                    command.add("/c");
+                    command.add("python");
+                    command.add(jarPath);
+                    command.add(">");
+                    command.add(outputFilePath); // Ausgabe in die Datei umleiten
+                } else if (os.contains("nix") || os.contains("nux") || os.contains("mac")) {
+                    // Für Linux/MacOS
+                    command.add("bash");
+                    command.add("-c");
+                    command.add(String.format("python %s > %s", jarPath, outputFilePath)); // Ausgabe in die Datei umleiten
+                }
+
+                ProcessBuilder processBuilder = new ProcessBuilder(command);
+                processBuilder.redirectErrorStream(true);
+
+                Process process = processBuilder.start();
+                int exitCode = process.waitFor();
+                System.out.println("Connector exited with code: " + exitCode);
+                String macAddress = getMacAddressFromScriptOutput();
+                if(exitCode == 0 && !macAddress.isEmpty()){
+                    macAddressFieldLabel.setText("MAC-Adresse gefunden: " + macAddress);
+                    dartboardMacField.setText(macAddress);
+                }else{
+                    macAddressFieldLabel.setText("Fehler beim Suchen der MAC-Adresse:");
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }).start();
+    }
+
+    public String getMacAddressFromScriptOutput() {
+        String filePath = "findDevices.log"; // Die Datei mit den Ausgaben
+        String targetDevice = "Smartness1";    // Das Zielgerät
+        String macAddress = "";
+
+        File file = new File(filePath);
+        if (!file.exists()) {
+            System.out.println("Die Datei " + filePath + " wurde nicht gefunden.");
+        }
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.contains(targetDevice)) {
+                    // Extrahiere die MAC-Adresse
+                    macAddress = line.split(": ")[0].trim();
+                    System.out.println("Die MAC-Adresse von " + targetDevice + " ist: " + macAddress);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return macAddress;
     }
 
 }

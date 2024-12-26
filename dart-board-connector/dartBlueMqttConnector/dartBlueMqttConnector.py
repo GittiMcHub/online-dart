@@ -108,7 +108,7 @@ class DartBlueMqttConnector():
             self.MQTT_BROKER_PORT = mqtt_port
             self.USERNAME = mqtt_user
             self.PASSWORT = mqtt_pw
-            self.QOS = mqtt_qos
+            self.QOS = int(mqtt_qos)
             self.DARTBOARD_MAC = dartboard_mac
             self.DARTBOARD_UUID = dartboard_uuid
             self.DARTBOARD_ID = dartboard_id
@@ -132,7 +132,7 @@ class DartBlueMqttConnector():
             self.MQTT_BROKER_PORT = int(lines[1].split(":")[1].strip())
             self.USERNAME = lines[2].split(":")[1].strip()
             self.PASSWORT = lines[3].split(":")[1].strip()
-            self.QOS = lines[4].split(":")[1].strip()
+            self.QOS = int(lines[4].split(":")[1].strip())
 
     # Funktion zum Lesen der Dartboard-Informationen aus der Datei
     def read_dartboard_config(self):

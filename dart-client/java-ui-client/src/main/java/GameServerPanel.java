@@ -66,10 +66,16 @@ public class GameServerPanel extends JPanel {
                     command.add("cmd");
                     command.add("/c");
                     command.add("start");
+                } else if (os.contains("linux") || os.contains("mac")) {
+                    // Unter Linux/Mac: Neues Terminal öffnen
+                    command.add("gnome-terminal"); // Erfordert GNOME-Terminal
+                    command.add("--");
+                    command.add("java");
+                    command.add("-jar");
+                } else {
+                    throw new UnsupportedOperationException("Betriebssystem nicht unterstützt.");
                 }
 
-                command.add("java");
-                command.add("-jar");
                 command.add(jarPath);
                 command.add("-mqttbrokerip");
                 command.add(GameConfigPanel.getInstance().getIpAddressField());

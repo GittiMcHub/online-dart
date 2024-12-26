@@ -108,3 +108,6 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+#BehilfsDatei für MAC Adresse Dartboard
+findDevices.log
