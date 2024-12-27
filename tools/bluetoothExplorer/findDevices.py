@@ -1,3 +1,5 @@
+# Version v0.1.2
+
 import asyncio
 from bleak import BleakScanner
 

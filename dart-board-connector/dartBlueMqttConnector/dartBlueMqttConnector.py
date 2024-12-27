@@ -1,3 +1,5 @@
+# Version v0.1.2
+
 import paho.mqtt.client as mqtt
 import asyncio
 from bleak import BleakClient
