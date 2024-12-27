@@ -15,6 +15,7 @@ public class DartboardConnectorPanel extends JPanel {
     private JLabel ausgabeText;
 
     private JLabel macAddressFieldLabel;
+    private JCheckBox usePythonCheckbox;
 
 
     public DartboardConnectorPanel(){
@@ -22,7 +23,7 @@ public class DartboardConnectorPanel extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         // Panel für Eingabefelder
-        JPanel formPanel = new JPanel(new GridLayout(6, 2, 10, 10));
+        JPanel formPanel = new JPanel(new GridLayout(7, 2, 10, 10));
 
         // Felder hinzufügen
         formPanel.add(new JLabel("MAC-Adresse:"));
@@ -49,6 +50,10 @@ public class DartboardConnectorPanel extends JPanel {
         ausgabeText = new JLabel("Dartboard Connector noch nicht gestartet.");
         formPanel.add(ausgabeText);
 
+        formPanel.add(new JLabel("(Nur bei Windows) Nutze Python-Skript statt Exe"));
+        usePythonCheckbox = new JCheckBox("", false);
+        formPanel.add(usePythonCheckbox);
+
         add(formPanel, BorderLayout.CENTER);
 
         // Button erstellen
@@ -63,7 +68,7 @@ public class DartboardConnectorPanel extends JPanel {
     private void startDartboardConnector() {
         new Thread(() -> {
             try {
-                String jarPath = "dartBlueMqttConnector-v0.1.2.py";
+                String connectorSkriptPath;
 
                 List<String> command = new ArrayList<>();
                 // Bestimmen des Betriebssystems
@@ -74,10 +79,21 @@ public class DartboardConnectorPanel extends JPanel {
                     command.add("cmd");
                     command.add("/c");
                     command.add("start");
+                    // Wenn python benutzt werden soll
+                    if(usePythonCheckbox.isSelected()){
+                        command.add("python");
+                        connectorSkriptPath = "dartBlueMqttConnector-v0.1.2.py";
+                    }else{
+                        // Für Windows PCs ohne Python. Alle Abhängigkeiten in exe Datei enthalten
+                        connectorSkriptPath = "dartBlueMqttConnector-v0.1.2.exe";
+                    }
+                }else {
+                    // Andere Betriebssysteme brauchen zusätzlich python inkl. Abhängigkeiten
+                    command.add("python");
+                    connectorSkriptPath = "dartBlueMqttConnector-v0.1.2.py";
                 }
 
-                command.add("python");
-                command.add(jarPath);
+                command.add(connectorSkriptPath);
                 command.add("--mqttbrokerip");
                 command.add(GameConfigPanel.getInstance().getIpAddressField());
                 command.add("--mqttbrokerport");
@@ -124,7 +140,7 @@ public class DartboardConnectorPanel extends JPanel {
         new Thread(() -> {
             try {
                 macAddressFieldLabel.setText("Suche MAC-Adresse Dartboard...");
-                String jarPath = "findDevices-v0.1.2.py";
+                String findDeviceSkriptPath;
                 String outputFilePath = "findDevices.log";
 
                 List<String> command = new ArrayList<>();
@@ -135,15 +151,26 @@ public class DartboardConnectorPanel extends JPanel {
                     // Für Windows
                     command.add("cmd");
                     command.add("/c");
-                    command.add("python");
-                    command.add(jarPath);
+
+                    // Wenn python benutzt werden soll
+                    if(usePythonCheckbox.isSelected()){
+                        command.add("python");
+                        findDeviceSkriptPath = "findDevices-v0.1.2.py";
+                    }else{
+                        // Für Windows PCs ohne Python. Alle Abhängigkeiten in exe Datei enthalten
+                        findDeviceSkriptPath = "findDevices-v0.1.2.exe";
+                    }
+                    command.add(findDeviceSkriptPath);
                     command.add(">");
                     command.add(outputFilePath); // Ausgabe in die Datei umleiten
-                } else if (os.contains("nix") || os.contains("nux") || os.contains("mac")) {
+                } else {
                     // Für Linux/MacOS
+                    // Andere Betriebssysteme brauchen zusätzlich python inkl. Abhängigkeiten
+                    findDeviceSkriptPath = "findDevices-v0.1.2.py";
+
                     command.add("bash");
                     command.add("-c");
-                    command.add(String.format("python %s > %s", jarPath, outputFilePath)); // Ausgabe in die Datei umleiten
+                    command.add(String.format("python %s > %s", findDeviceSkriptPath, outputFilePath)); // Ausgabe in die Datei umleiten
                 }
 
                 ProcessBuilder processBuilder = new ProcessBuilder(command);
