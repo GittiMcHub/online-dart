@@ -68,10 +68,18 @@ public class GameServerPanel extends JPanel {
                     command.add("start");
                     command.add("java");
                     command.add("-jar");
-                } else if (os.contains("linux") || os.contains("mac")) {
-                    // Unter Linux/Mac: Neues Terminal öffnen
-                    command.add("gnome-terminal"); // Erfordert GNOME-Terminal
-                    command.add("--");
+                } else if (os.contains("linux")) {
+                    // Unter Linux/Raspbian: Neues Terminal öffnen
+                    // Raspbian hat standardmäßig lxterminal
+                    command.add("lxterminal"); // Standard-Terminal auf Raspbian
+                    command.add("-e"); // Auszuführender Befehl
+                    command.add("java");
+                    command.add("-jar");
+                } else if (os.contains("mac")) {
+                    // Für Mac: Terminal öffnen
+                    command.add("open");
+                    command.add("-a");
+                    command.add("Terminal");
                     command.add("java");
                     command.add("-jar");
                 } else {

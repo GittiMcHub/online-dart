@@ -68,6 +68,7 @@ public class GameConfigPanel extends JPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 createMqttClient();
+                connectButton.setEnabled(false);
             }
         });
     }
