@@ -11,13 +11,14 @@ public class GameServerPanel extends JPanel {
     private JComboBox<Integer> abzahlSpieleComboBox;
     private JComboBox<Integer> abzahlSpielerComboBox;
     private JLabel ausgabeText;
+    private JCheckBox useJavaCheckbox;
 
     public GameServerPanel() {
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         // Panel für Eingabefelder
-        JPanel formPanel = new JPanel(new GridLayout(8, 2, 10, 10));
+        JPanel formPanel = new JPanel(new GridLayout(9, 2, 10, 10));
 
         // Felder hinzufügen
         formPanel.add(new JLabel("Start Punktestand:"));
@@ -42,6 +43,10 @@ public class GameServerPanel extends JPanel {
         ausgabeText = new JLabel("Server noch nicht gestartet");
         formPanel.add(ausgabeText);
 
+        formPanel.add(new JLabel("(Nur bei Windows) Nutze .jar statt .exe"));
+        useJavaCheckbox = new JCheckBox("", false);
+        formPanel.add(useJavaCheckbox);
+
         add(formPanel, BorderLayout.CENTER);
 
         // Button erstellen
@@ -55,7 +60,9 @@ public class GameServerPanel extends JPanel {
     private void startDartserver() {
         new Thread(() -> {
             try {
-                String jarPath = "anthrax-v0.1.1.jar";
+                String gameserverExecutablePath;
+                String javaExecutable = "anthrax-v0.1.3a.jar";
+                String winExecutable = "anthrax-v0.1.3a.exe";
 
                 List<String> command = new ArrayList<>();
                 // Bestimmen des Betriebssystems
@@ -66,19 +73,34 @@ public class GameServerPanel extends JPanel {
                     command.add("cmd");
                     command.add("/c");
                     command.add("start");
+                    if(useJavaCheckbox.isSelected()){
+                        command.add("java");
+                        command.add("-jar");
+                        gameserverExecutablePath = javaExecutable;
+                    }else{
+                        gameserverExecutablePath = winExecutable;
+                    }
+                } else if (os.contains("linux")) {
+                    // Unter Linux/Raspbian: Neues Terminal öffnen
+                    // Raspbian hat standardmäßig lxterminal
+                    command.add("lxterminal"); // Standard-Terminal auf Raspbian
+                    command.add("-e"); // Auszuführender Befehl
                     command.add("java");
                     command.add("-jar");
-                } else if (os.contains("linux") || os.contains("mac")) {
-                    // Unter Linux/Mac: Neues Terminal öffnen
-                    command.add("gnome-terminal"); // Erfordert GNOME-Terminal
-                    command.add("--");
+                    gameserverExecutablePath = javaExecutable;
+                } else if (os.contains("mac")) {
+                    // Für Mac: Terminal öffnen
+                    command.add("open");
+                    command.add("-a");
+                    command.add("Terminal");
                     command.add("java");
                     command.add("-jar");
+                    gameserverExecutablePath = javaExecutable;
                 } else {
                     throw new UnsupportedOperationException("Betriebssystem nicht unterstützt.");
                 }
 
-                command.add(jarPath);
+                command.add(gameserverExecutablePath);
                 command.add("-mqttbrokerip");
                 command.add(GameConfigPanel.getInstance().getIpAddressField());
                 command.add("-mqttbrokerport");

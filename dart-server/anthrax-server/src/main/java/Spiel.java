@@ -206,6 +206,7 @@ public class Spiel implements Runnable {
                             this.mqttHandler.publishSound(Sounds.RESET);
                             spielzugAktuellerSpieler.setPunktestand(punkteStandAnfangSpielzug);
                             lastMessageId = sharedData.getLastMessageId();
+                            gameDataPublisher.publishGameData();
                         }
                     }
                     this.gameState = GameState.RUNNING;

@@ -4,7 +4,7 @@ public class MainFrame extends JFrame {
     private GameConfigPanel gameconfig;
 
     public MainFrame() {
-        setTitle("Dartboard Java-UI anthrax-v0.1.1");
+        setTitle("Dartboard Java-UI anthrax-v0.1.3a");
         setSize(800, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(true);

@@ -1,10 +1,7 @@
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
-public class MQTTClient {
+public class MQTTClient implements MqttCallback {
     private String brokerUrl;
     private String clientId;
     private String topic;
@@ -14,6 +11,7 @@ public class MQTTClient {
     private GameData gameData;
     private int qos;
     private Sounds sounds;
+    private MqttConnectOptions options;
 
     public MQTTClient(String brokerUrl, String clientId, String topic, int qos, String username, String password, GameData gameData) {
         this.brokerUrl = brokerUrl;
@@ -28,6 +26,7 @@ public class MQTTClient {
         try {
             // MQTT-Client erstellen
             client = new MqttClient(brokerUrl, clientId, new MemoryPersistence());
+            client.setCallback(this); // Damit die Callback Funktionen auch funktionieren
         } catch (MqttException e) {
             System.err.println("Fehler beim Erstellen des MQTT-Clients: " + e.getMessage());
         }
@@ -35,13 +34,18 @@ public class MQTTClient {
 
     public void connect() {
         try {
-            MqttConnectOptions options = new MqttConnectOptions();
+            this.options = new MqttConnectOptions();
             options.setCleanSession(true);
             options.setUserName(username);
             options.setPassword(password.toCharArray()); // Passwort als char[] übergeben
 
             client.connect(options);
-            System.out.println("Verbunden mit dem MQTT-Broker");
+            if (isConnected() == true) {
+                System.out.println("Verbunden mit dem MQTT-Broker");
+            }else{
+                System.out.println("MQTT Broker nicht verbunden");
+            }
+
 
             // Subscriben des gewünschten Topics
             client.subscribe(topic, this.qos, (topic, message) -> {
@@ -68,7 +72,7 @@ public class MQTTClient {
                 System.out.println("Verbindung zum MQTT-Broker getrennt");
             }
         } catch (MqttException e) {
-            System.err.println("Fehler beim Trennen der Verbindung: " + e.getMessage());
+            System.out.println("Fehler beim Trennen der Verbindung: " + e.getMessage());
         }
     }
 
@@ -79,11 +83,48 @@ public class MQTTClient {
                 System.out.println("Nachricht veröffentlicht: " + message);
             }
         } catch (MqttException e) {
-            System.err.println("Fehler beim Veröffentlichen der Nachricht: " + e.getMessage());
+            System.out.println("Fehler beim Veröffentlichen der Nachricht: " + e.getMessage());
         }
     }
 
     public boolean isConnected() {
         return client != null && client.isConnected();
+    }
+
+    // MqttCallback: Verbindungsverlust behandeln
+    @Override
+    public void connectionLost(Throwable cause) {
+        System.out.println("Verbindung verloren: " + cause.getMessage());
+        retryConnection();
+    }
+
+    @Override
+    public void messageArrived(String topic, MqttMessage message) throws Exception {
+        //brauchen wir nicht, da Lambda bei subscribe
+    }
+
+    @Override
+    public void deliveryComplete(IMqttDeliveryToken token) {
+        //brauchen wir nicht
+    }
+
+    // Methode zur Wiederverbindung
+    private void retryConnection() {
+        new Thread(() -> {
+            while (!isConnected()) {
+                try {
+                    System.out.println("Versuche erneut zu verbinden...");
+                    client.connect(options);
+                } catch (Exception e) {
+                    System.err.println("Wiederverbindungsversuch fehlgeschlagen: " + e.getMessage());
+                    try {
+                        Thread.sleep(5000); // Warten, bevor der nächste Versuch startet
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            }
+            System.out.println("Erneut verbunden!");
+        }).start();
     }
 }
