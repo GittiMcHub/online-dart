@@ -5,7 +5,7 @@ import org.json.JSONObject;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class MqttHandler implements Runnable {
+public class MqttHandler implements Runnable, MqttCallback {
     private final SharedData data;
     private MqttClient client;
     private MqttConnectOptions options;
@@ -13,14 +13,15 @@ public class MqttHandler implements Runnable {
     private int qos;
     private ConfigReader configReader;
 
-    public MqttHandler(SharedData sharedData){
+    public MqttHandler(SharedData sharedData) {
         this.data = sharedData;
         this.configReader = new ConfigReader();
 
         try {
             client = new MqttClient(configReader.getBroker(), configReader.getClientID());
             this.options = new MqttConnectOptions();
-            this.options.setAutomaticReconnect(true);
+            //this.options.setAutomaticReconnect(true);
+            this.options.setKeepAliveInterval(10);
             this.options.setPassword(configReader.getPassword().toCharArray());
             this.options.setUserName(configReader.getUser());
             this.qos = configReader.getQos();
@@ -30,7 +31,8 @@ public class MqttHandler implements Runnable {
             throw new RuntimeException(e);
         }
     }
-    public MqttHandler(SharedData sharedData, String mqttbrokerIp, String mqttbrokerPort, String mqttUser, String mqttPassword,  String mqttClientId, int qos){
+
+    public MqttHandler(SharedData sharedData, String mqttbrokerIp, String mqttbrokerPort, String mqttUser, String mqttPassword, String mqttClientId, int qos) {
         this.data = sharedData;
         String broker = "tcp://" + mqttbrokerIp + ":" + mqttbrokerPort;
         try {
@@ -55,33 +57,13 @@ public class MqttHandler implements Runnable {
 
             if (client.isConnected()) {
                 System.out.println("[MQTT-Handler] Verbindung zum MQTT Broker hergestellt");
-                client.setCallback(new MqttCallback() {
-                    public void messageArrived(String topic, MqttMessage message) throws Exception {
-                        System.out.println("[MQTT-Handler] topic: " + topic + " QOS: " + message.getQos() + " Message Länge: " + message.getPayload().length);
-                        System.out.println("[MQTT-Handler] message content: " + new String(message.getPayload()));
-                        String payload = new String(message.getPayload(), "UTF-8");
-                        // Falls irgendwelche anderen Nachrichten reinkommen, maximale Länge ist 3 Chars!
-                        if(payload.length()==3){
-                            int topicnumber = extractNumberFromTopic(topic);
-                            data.setMessage(message, topicnumber);
-                        }else{
-                            System.out.println("[MQTT-Handler] Ungültige Nachricht empfangen");
-                        }
-                    }
-
-                    public void connectionLost(Throwable cause) {
-                        System.out.println("[MQTT-Handler] connectionLost: " + cause.getMessage());
-                    }
-                    public void deliveryComplete(IMqttDeliveryToken token) {
-                        System.out.println("[MQTT-Handler] deliveryComplete: " + token.isComplete());
-                    }
-                });
-            }else{
+                client.setCallback(this);
+            } else {
                 System.out.println("[MQTT-Handler] Not Connected to MQTT Broker!");
             }
             client.subscribe(this.topic, this.qos);
 
-        }catch (Exception ex){
+        } catch (Exception ex) {
             ex.printStackTrace();
             System.out.println("[MQTT-Handler] ERROR in run()");
         }
@@ -113,7 +95,7 @@ public class MqttHandler implements Runnable {
         return -1;
     }
 
-    public void publish(String pubMessage){
+    public void publish(String pubMessage) {
         MqttMessage msg = new MqttMessage();
         msg.setQos(1);
         msg.setPayload(pubMessage.getBytes());
@@ -124,7 +106,7 @@ public class MqttHandler implements Runnable {
         }
     }
 
-    public void publishSound(Sounds soundName){
+    public void publishSound(Sounds soundName) {
         Gson gson = new Gson();
         String spielJson = gson.toJson(new Sound(soundName.toString()));
         MqttMessage msg = new MqttMessage();
@@ -136,6 +118,59 @@ public class MqttHandler implements Runnable {
             e.printStackTrace();  // Handle or log the exception appropriately
         }
     }
+
+    @Override
+    public void connectionLost(Throwable cause) {
+        System.out.println("[MQTT-Handler] connectionLost: " + cause.getMessage());
+        retryConnection();
+    }
+
+    @Override
+    public void messageArrived(String topic, MqttMessage message) throws Exception {
+        System.out.println("[MQTT-Handler] topic: " + topic + " QOS: " + message.getQos() + " Message Länge: " + message.getPayload().length);
+        System.out.println("[MQTT-Handler] message content: " + new String(message.getPayload()));
+        String payload = new String(message.getPayload(), "UTF-8");
+        // Falls irgendwelche anderen Nachrichten reinkommen, maximale Länge ist 3 Chars!
+        if (payload.length() == 3) {
+            int topicnumber = extractNumberFromTopic(topic);
+            data.setMessage(message, topicnumber);
+        } else {
+            System.out.println("[MQTT-Handler] Ungültige Nachricht empfangen");
+        }
+    }
+
+    @Override
+    public void deliveryComplete(IMqttDeliveryToken token) {
+        System.out.println("[MQTT-Handler] deliveryComplete: " + token.isComplete());
+    }
+
+    public void retryConnection() {
+        new Thread(() -> {
+            while (!client.isConnected()) {
+                try {
+                    System.out.println("Versuche erneut zu verbinden...");
+                    client.connect(options);
+                } catch (Exception e) {
+                    System.err.println("Wiederverbindungsversuch fehlgeschlagen: " + e.getMessage());
+                    try {
+                        Thread.sleep(5000); // Warten, bevor der nächste Versuch startet
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        System.out.println("[MQTT-Handler] ERROR in retryConnection()  Thread interrupt");
+                    }
+                }
+            }
+            System.out.println("Erneut verbunden!");
+            try {
+                client.setCallback(this);
+                client.subscribe(this.topic, this.qos);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                System.out.println("[MQTT-Handler] ERROR in retryConnection()  subscribe/callback");
+            }
+        }).start();
+    }
+
     // Klasse für das JSON-Format definieren
     static private class Sound {
         String sound;
