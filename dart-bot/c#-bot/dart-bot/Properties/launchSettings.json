@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "dartBot": {
+      "commandName": "Project"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker"
+    }
+  }
+}

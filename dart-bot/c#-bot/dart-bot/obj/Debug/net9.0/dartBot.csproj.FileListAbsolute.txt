@@ -1,0 +1,17 @@
+C:\Users\Kevin\Desktop\dartBot\dartBot\bin\Debug\net9.0\dartBot.exe
+C:\Users\Kevin\Desktop\dartBot\dartBot\bin\Debug\net9.0\dartBot.deps.json
+C:\Users\Kevin\Desktop\dartBot\dartBot\bin\Debug\net9.0\dartBot.runtimeconfig.json
+C:\Users\Kevin\Desktop\dartBot\dartBot\bin\Debug\net9.0\dartBot.dll
+C:\Users\Kevin\Desktop\dartBot\dartBot\bin\Debug\net9.0\dartBot.pdb
+C:\Users\Kevin\Desktop\dartBot\dartBot\bin\Debug\net9.0\MQTTnet.dll
+C:\Users\Kevin\Desktop\dartBot\dartBot\obj\Debug\net9.0\dartBot.csproj.AssemblyReference.cache
+C:\Users\Kevin\Desktop\dartBot\dartBot\obj\Debug\net9.0\dartBot.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Kevin\Desktop\dartBot\dartBot\obj\Debug\net9.0\dartBot.AssemblyInfoInputs.cache
+C:\Users\Kevin\Desktop\dartBot\dartBot\obj\Debug\net9.0\dartBot.AssemblyInfo.cs
+C:\Users\Kevin\Desktop\dartBot\dartBot\obj\Debug\net9.0\dartBot.csproj.CoreCompileInputs.cache
+C:\Users\Kevin\Desktop\dartBot\dartBot\obj\Debug\net9.0\dartBot.csproj.Up2Date
+C:\Users\Kevin\Desktop\dartBot\dartBot\obj\Debug\net9.0\dartBot.dll
+C:\Users\Kevin\Desktop\dartBot\dartBot\obj\Debug\net9.0\refint\dartBot.dll
+C:\Users\Kevin\Desktop\dartBot\dartBot\obj\Debug\net9.0\dartBot.pdb
+C:\Users\Kevin\Desktop\dartBot\dartBot\obj\Debug\net9.0\dartBot.genruntimeconfig.cache
+C:\Users\Kevin\Desktop\dartBot\dartBot\obj\Debug\net9.0\ref\dartBot.dll

@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36401.2
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "dart-bot", "dart-bot\dart-bot.csproj", "{F015E9FC-DB12-7112-EF80-BC951477881E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F015E9FC-DB12-7112-EF80-BC951477881E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F015E9FC-DB12-7112-EF80-BC951477881E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F015E9FC-DB12-7112-EF80-BC951477881E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F015E9FC-DB12-7112-EF80-BC951477881E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E9F072F5-3C77-43A2-9E9F-939D2C9F3499}
+	EndGlobalSection
+EndGlobal
