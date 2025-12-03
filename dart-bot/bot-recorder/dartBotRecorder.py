@@ -1,15 +1,13 @@
 # Version v0.1.2
-
-import paho.mqtt.client as mqtt
 import asyncio
 from bleak import BleakClient
 import time
 import threading
 import argparse
+import json
 
-MQTT_CONFIG_FILE = "./config/mqttbroker.conf"
 DARTBOARD_CONFIG_FILE = "./config/dartboard.conf"
-TOPIC_DARTBOARD = "dartboard/"
+SAVE_FILE = "dart_games.json"
 
 hex_mapping = {
     # Felder Außen
@@ -102,39 +100,97 @@ hex_mapping = {
     "65": "999" # Next Player
 }
 
-class DartBlueMqttConnector():
-    def __init__(self, mqtt_ip=None, mqtt_port=None, mqtt_user=None, mqtt_pw=None, mqtt_qos=None, dartboard_mac=None, dartboard_uuid=None, dartboard_id=None):
+class DartGame:
+    def __init__(self, player_name, num_games=1):
+        self.player_name = player_name
+        self.num_games = num_games
+        self.games = []  # Liste aller Spiele
+        self.current_game = []
+        self.current_turn = []
+        self.current_score = 301
+        print(f"Current Score:  {self.current_score}")
+
+    def add_throw(self, value):
+        if len(self.games) == self.num_games:
+            print("Programm wird nach spätestens 60 Sekunden automatisch geschlossen")
+        """Einen Wurf hinzufügen"""
+        if value == '999':
+            # Zug beenden, egal wie viele Würfe
+            while len(self.current_turn) < 3:
+                self.current_turn.append("998")  # nicht geworfene Darts auffüllen
+            self.current_game.append(self.current_turn)
+            self.current_turn = []
+            print(f"Spielzug abgeschlossen. Aktueller Punktestand: {self.current_score}")
+
+            # Falls Score auf 0 → Spielende
+            if self.current_score == 0:
+                print("Spiel beendet!")
+                self.finish_game()
+                
+            return
+
+        # Normaler Wurf
+        if len(self.current_turn) < 3:
+            self.current_turn.append(value)
+
+            # Punkte abziehen
+            score_val = self.translate_value(value)
+            if self.current_score - score_val >= 0:
+                self.current_score -= score_val
+                if len(self.current_turn) >= 3:
+                    print("Spielzug beendet. Roten Knopf drücken.")
+            else:
+                # TODO Punkte auf Spielzug vorher resetten...
+                print("Überworfen! Punkte bleiben gleich.")
+
+        else:
+            print("3 Würfe schon gemacht – warte auf roten Knopf (999).")
+
+        print(f"New Score: + {self.current_score}")
+
+    def translate_value(self, value):
+        """Wert in Punkte umrechnen"""
+        if value == "998" or value == "999":
+            return 0
+        mult = int(str(value)[0])
+        num = int(str(value)[1:])
+        return mult * num
+
+    def finish_game(self):
+        """Spiel speichern und zurücksetzen"""
+        print("Spiel speichern und neue Runde starten.")
+        self.games.append(self.current_game)
+        self.current_game = []
+        self.current_turn = []
+        self.current_score = 301
+        if(len(self.games) == self.num_games):
+            self.save_to_file()
+
+
+    def save_to_file(self):
+        """JSON speichern"""
+        data = {
+            "name": self.player_name,
+            "spiele": self.games
+        }
+        with open(SAVE_FILE, "w") as f:
+            json.dump(data, f, indent=2)
+        print(f"Spielstand in {SAVE_FILE} gespeichert.")
+
+
+class DartBotRecorder():
+    def __init__(self, game: DartGame, dartboard_mac=None, dartboard_uuid=None, dartboard_id=None):
+        self.game = game
         # Wenn Skript mit Argumenten aufgerufen wurde, dann die Werte aus den Argumenten setzen
-        if (mqtt_ip and mqtt_port and mqtt_user and mqtt_pw and mqtt_qos and dartboard_mac and dartboard_uuid and dartboard_id):
-            self.MQTT_BROKER_IP = mqtt_ip
-            self.MQTT_BROKER_PORT = mqtt_port
-            self.USERNAME = mqtt_user
-            self.PASSWORT = mqtt_pw
-            self.QOS = int(mqtt_qos)
+        if (dartboard_mac and dartboard_uuid and dartboard_id):
             self.DARTBOARD_MAC = dartboard_mac
             self.DARTBOARD_UUID = dartboard_uuid
             self.DARTBOARD_ID = dartboard_id
         else:
-            self.read_mqtt_config()
             self.read_dartboard_config()
             
-        self.publishTopic = TOPIC_DARTBOARD + str(self.DARTBOARD_ID)
-        self.mqttc = mqtt.Client(protocol=mqtt.MQTTv311)
-        self.mqttc.username_pw_set(self.USERNAME, self.PASSWORT)
-        self.mqttc.on_connect = self.on_connect
-
     def on_connect(self, client, userdata, flags, reason_code, properties=None):
         print(f"Connected with result code {reason_code}")
-
-    # Funktion zum Lesen der MQTT-Broker-Informationen aus der Datei
-    def read_mqtt_config(self):
-        with open(MQTT_CONFIG_FILE, "r") as file:
-            lines = file.readlines()
-            self.MQTT_BROKER_IP = lines[0].split(":")[1].strip()
-            self.MQTT_BROKER_PORT = int(lines[1].split(":")[1].strip())
-            self.USERNAME = lines[2].split(":")[1].strip()
-            self.PASSWORT = lines[3].split(":")[1].strip()
-            self.QOS = int(lines[4].split(":")[1].strip())
 
     # Funktion zum Lesen der Dartboard-Informationen aus der Datei
     def read_dartboard_config(self):
@@ -148,14 +204,16 @@ class DartBlueMqttConnector():
     async def handle_notifications(self,sender: int, data: bytearray):
         print(f"Received data from handle {sender}: {data.hex()}")
         value = hex_mapping.get(data.hex(), "999")
-        self.mqttc.publish(self.publishTopic, value, qos=self.QOS)
-        print("Value: "+ value +" published.")
+        print("Value: "+ value +" empfangen.")
+        # HIER WERT HINZUFÜGEN
+        self.game.add_throw(value)
+        
 
     async def connect_and_subscribe(self):
         async with BleakClient(self.DARTBOARD_MAC) as dartboard:
             print(f"Connected to {self.DARTBOARD_MAC}")
             # Dienste des Geräts abrufen
-            services = await dartboard.get_services()
+            services = dartboard.services
             # Characteristics für Handle Value Notifications finden
             for service in services:
                 for char in service.characteristics:
@@ -173,15 +231,6 @@ class DartBlueMqttConnector():
 
             print("Listening for Handle Value Notifications. Press Ctrl+C to exit.")
             await asyncio.sleep(36000)  # Hier kannst du die Laufzeit in Sekunden anpassen oder durch ein Event ersetzen
-    
-    def reconnect_mqtt(self):
-        #self.mqttc.loop_forever()
-        while True:
-            if not self.mqttc.is_connected():
-                print("Reconnecting to MQTT broker...")
-                self.mqttc.connect(self.MQTT_BROKER_IP, self.MQTT_BROKER_PORT, 60)
-                self.mqttc.loop_forever()
-            time.sleep(10)
 
     def reconnect_bt(self):
         while True:
@@ -189,14 +238,17 @@ class DartBlueMqttConnector():
             loop.run_until_complete(connector.connect_and_subscribe())
             time.sleep(5)
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="MQTT and Dartboard Connector")
-    parser.add_argument("--mqttbrokerip", type=str, required=False, help="MQTT broker hostname or IP address")
-    parser.add_argument("--mqttbrokerport", type=int, required=False, help="MQTT broker port")
-    parser.add_argument("--mqttuser", type=str, required=False, help="MQTT broker username")
-    parser.add_argument("--mqttpassword", type=str, required=False, help="MQTT broker password")
-    parser.add_argument("--mqttqos", type=str, required=False, help="MQTT broker Quality of Service")
 
+if __name__ == "__main__":
+
+     # Eingaben für Spielername und Anzahl Spiele
+    player_name = input("Spielername: ")
+    num_games = int(input("Anzahl Spiele: "))
+
+    game = DartGame(player_name, num_games)
+
+
+    parser = argparse.ArgumentParser(description="Dartboard Connector")
     parser.add_argument("--dartboard_mac", type=str, required=False, help="Dartboard MAC-Adresse")
     #uuid should be 0000ffe1-0000-1000-8000-00805f9b34fb
     parser.add_argument("--dartboard_uuid", type=str, required=False, help="Dartboard Bluetooth UUID")
@@ -204,17 +256,21 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    if(args.mqttbrokerip and args.mqttbrokerport and args.mqttuser and args.mqttpassword and args.mqttqos and args.dartboard_mac and args.dartboard_uuid and args.dartboard_id):
-        connector = DartBlueMqttConnector(args.mqttbrokerip, args.mqttbrokerport, args.mqttuser, args.mqttpassword, args.mqttqos, args.dartboard_mac, args.dartboard_uuid, args.dartboard_id)
+    if(args.dartboard_mac and args.dartboard_uuid and args.dartboard_id):
+        connector = DartBotRecorder(args.dartboard_mac, args.dartboard_uuid, args.dartboard_id)
     else:
-        connector = DartBlueMqttConnector()
+        connector = DartBotRecorder(game)
     
     loop = asyncio.get_event_loop()
     # Starten Sie den Reconnect-Mechanismus in einem separaten Thread
-    threading.Thread(target=connector.reconnect_mqtt, daemon=True).start()
     threading.Thread(target=connector.reconnect_bt, daemon=True).start()
 
-    while True:
+    run = True;
+    while run:
         print("Main Thread läuft noch")
         time.sleep(60)
+        if len(game.games) == game.num_games:
+            run = False
+            print("Programm schließt in 5 Sekunden...")
+            time.sleep(5)
     
