@@ -6,6 +6,7 @@ from bleak import BleakClient
 import time
 import threading
 import argparse
+import signal
 
 MQTT_CONFIG_FILE = "./config/mqttbroker.conf"
 DARTBOARD_CONFIG_FILE = "./config/dartboard.conf"
@@ -117,9 +118,12 @@ class DartBlueMqttConnector():
         else:
             self.read_mqtt_config()
             self.read_dartboard_config()
+
+        self.stop_event = threading.Event()
+        self.ble_loop = None  # speichern für Zugriff im Thread
             
         self.publishTopic = TOPIC_DARTBOARD + str(self.DARTBOARD_ID)
-        self.mqttc = mqtt.Client(protocol=mqtt.MQTTv311)
+        self.mqttc = mqtt.Client(protocol=mqtt.MQTTv311, callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
         self.mqttc.username_pw_set(self.USERNAME, self.PASSWORT)
         self.mqttc.on_connect = self.on_connect
 
@@ -152,27 +156,45 @@ class DartBlueMqttConnector():
         print("Value: "+ value +" published.")
 
     async def connect_and_subscribe(self):
-        async with BleakClient(self.DARTBOARD_MAC) as dartboard:
-            print(f"Connected to {self.DARTBOARD_MAC}")
-            # Dienste des Geräts abrufen
-            services = await dartboard.get_services()
-            # Characteristics für Handle Value Notifications finden
-            for service in services:
-                for char in service.characteristics:
-                    if str(char.uuid) == self.DARTBOARD_UUID:
-                        notification_char = char
+        try:
+            async with BleakClient(self.DARTBOARD_MAC) as dartboard:
+                print(f"Connected to {self.DARTBOARD_MAC}")
+
+                services = dartboard.services
+
+                notification_char = None
+
+                for service in services:
+                    for char in service.characteristics:
+                        if str(char.uuid) == self.DARTBOARD_UUID:
+                            notification_char = char
+                            break
+                    if notification_char:
                         break
-                else:
-                    continue
-                break
-            else:
-                raise RuntimeError("Notification characteristic not found.")
 
-            # Handle Value Notifications aktivieren
-            await dartboard.start_notify(notification_char.handle, self.handle_notifications)
+                if not notification_char:
+                    raise RuntimeError("Notification characteristic not found.")
 
-            print("Listening for Handle Value Notifications. Press Ctrl+C to exit.")
-            await asyncio.sleep(36000)  # Hier kannst du die Laufzeit in Sekunden anpassen oder durch ein Event ersetzen
+                # UUID verwenden, nicht handle
+                await dartboard.start_notify(
+                    notification_char.uuid,
+                    self.handle_notifications
+                )
+
+                print("Listening for notifications…")
+                # Dauerhaft laufen lassen
+                # BLE Thread wartet hier, bis stop_event gesetzt wird
+                while not self.stop_event.is_set():
+                    await asyncio.sleep(0.1)
+
+                # sauber schließen
+                await dartboard.stop_notify(notification_char.uuid)
+                print("Notifications stopped")
+                await dartboard.disconnect()
+                print("Disconnected from Dartboard cleanly.")
+
+        except Exception as e:
+            print("BLE connection error:", e)
     
     def reconnect_mqtt(self):
         #self.mqttc.loop_forever()
@@ -184,10 +206,16 @@ class DartBlueMqttConnector():
             time.sleep(10)
 
     def reconnect_bt(self):
-        while True:
-            print("Reconnecting to Dartboard...")
-            loop.run_until_complete(connector.connect_and_subscribe())
-            time.sleep(5)
+        # Thread-EventLoop erzeugen
+        self.ble_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.ble_loop)
+        try:
+            self.ble_loop.run_until_complete(self.connect_and_subscribe())
+        except Exception as e:
+            print("BLE thread exception:", e)
+        finally:
+            self.ble_loop.close()
+            print("BLE thread stopped")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="MQTT and Dartboard Connector")
@@ -209,10 +237,21 @@ if __name__ == "__main__":
     else:
         connector = DartBlueMqttConnector()
     
-    loop = asyncio.get_event_loop()
-    # Starten Sie den Reconnect-Mechanismus in einem separaten Thread
+    # Startet den Reconnect-Mechanismus in einem separaten Thread
     threading.Thread(target=connector.reconnect_mqtt, daemon=True).start()
-    threading.Thread(target=connector.reconnect_bt, daemon=True).start()
+    # BLE-Thread starten
+    ble_thread = threading.Thread(target=connector.reconnect_bt, daemon=True)
+    ble_thread.start()
+
+    # Ctrl+C sauber abfangen
+    def signal_handler(sig, frame):
+        print("Ctrl+C detected, shutting down…")
+        connector.stop_event.set()  # BLE Thread stoppen
+        ble_thread.join()           # warten bis Thread fertig
+        print("Shutdown complete")
+        exit(0)
+
+    signal.signal(signal.SIGINT, signal_handler)
 
     while True:
         print("Main Thread läuft noch")

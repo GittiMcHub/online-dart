@@ -1,4 +1,3 @@
-# Version v0.1.2
 import asyncio
 from bleak import BleakClient
 import time
@@ -108,12 +107,22 @@ class DartGame:
         self.current_game = []
         self.current_turn = []
         self.current_score = 301
+        self.last_score = 301
         print(f"Current Score:  {self.current_score}")
 
     def add_throw(self, value):
+        # Anzahl Spiele erreicht
         if len(self.games) == self.num_games:
             print("Programm wird nach spätestens 60 Sekunden automatisch geschlossen")
+            return
         """Einen Wurf hinzufügen"""
+
+        # Anfang des Spielzuges den Score merken
+        if len(self.current_turn) == 0:
+            self.last_score = self.current_score
+            
+
+        # Button NEXT
         if value == '999':
             # Zug beenden, egal wie viele Würfe
             while len(self.current_turn) < 3:
@@ -125,8 +134,7 @@ class DartGame:
             # Falls Score auf 0 → Spielende
             if self.current_score == 0:
                 print("Spiel beendet!")
-                self.finish_game()
-                
+                self.finish_game()   
             return
 
         # Normaler Wurf
@@ -139,10 +147,12 @@ class DartGame:
                 self.current_score -= score_val
                 if len(self.current_turn) >= 3:
                     print("Spielzug beendet. Roten Knopf drücken.")
-            else:
-                # TODO Punkte auf Spielzug vorher resetten...
-                print("Überworfen! Punkte bleiben gleich.")
-
+                if self.current_score < 0: # Überworfen
+                # Punkte auf Spielzug vorher resetten...
+                    self.current_score = self.last_score
+                    print("Überworfen! Punkte bleiben gleich.")
+                if self.current_score == 0:
+                    print("Spiel beendet.")
         else:
             print("3 Würfe schon gemacht – warte auf roten Knopf (999).")
 
