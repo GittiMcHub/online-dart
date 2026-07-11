@@ -21,11 +21,25 @@ public enum Segment {
 
     private final int score;
     private final String code;
+    private final int multiplier;
 
     Segment(int score, String code) {
         this.score = score;
         this.code = code;
+        if (code.startsWith("T")) {
+            this.multiplier = 3;
+        } else if (code.startsWith("D") || code.equals("BE")) {
+            // bullseye counts as a double (double bull) and is a valid double-out finish
+            this.multiplier = 2;
+        } else if (code.equals("WH") || code.equals("BH")) {
+            this.multiplier = 0;
+        } else {
+            this.multiplier = 1;
+        }
     }
 
+    public boolean isDouble() {
+        return this.multiplier == 2;
+    }
 
 }

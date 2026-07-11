@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Virtuelles Dartboard</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, sans-serif;
+      background: #1e1e24; color: #e8e8e8;
+      margin: 0; padding: 12px;
+    }
+    h1 { font-size: 1.1rem; margin: 0 0 10px; }
+    h2 { font-size: 0.9rem; margin: 0 0 6px; color: #9ad; text-transform: uppercase; letter-spacing: .05em; }
+    .layout { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; }
+    .panel {
+      background: #2a2a33; border: 1px solid #3a3a45; border-radius: 8px;
+      padding: 10px; min-width: 280px;
+    }
+    .panel.board { flex: 0 0 auto; }
+    .panel.game { flex: 1 1 340px; }
+    label { font-size: .75rem; color: #aaa; display: block; margin-top: 6px; }
+    input {
+      width: 100%; padding: 4px 6px; background: #1a1a20; color: #eee;
+      border: 1px solid #444; border-radius: 4px; font-size: .85rem;
+    }
+    .row { display: flex; gap: 8px; }
+    .row > div { flex: 1; }
+    button {
+      background: #3d5a80; color: #fff; border: none; border-radius: 4px;
+      padding: 6px 8px; cursor: pointer; font-size: .8rem;
+    }
+    button:hover { filter: brightness(1.2); }
+    button:disabled { background: #444; color: #888; cursor: default; }
+    #connectBtn { width: 100%; margin-top: 8px; }
+    .status { font-size: .8rem; margin-top: 6px; }
+    .status .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #c33; margin-right: 5px; }
+    .status.connected .dot { background: #3c3; }
+    .tabs { display: flex; gap: 4px; margin-bottom: 8px; }
+    .tabs button { background: #2a2a33; border: 1px solid #3a3a45; color: #aaa; }
+    .tabs button.active { background: #3d5a80; border-color: #3d5a80; color: #fff; }
+    #svgBoard svg { display: block; width: 340px; height: 340px; }
+    #svgBoard .seg { cursor: pointer; }
+    #svgBoard .seg:hover { filter: brightness(1.6); }
+    #svgBoard text { pointer-events: none; user-select: none; }
+    table.board-grid { border-spacing: 3px; margin-top: 4px; }
+    table.board-grid button { width: 44px; padding: 5px 0; font-variant-numeric: tabular-nums; }
+    button.mult-S { background: #3d5a80; }
+    button.mult-D { background: #6a5a2b; }
+    button.mult-T { background: #7a3b3b; }
+    button.bull { background: #35683c; width: 70px; }
+    button.special { background: #555; width: 100%; margin-top: 3px; }
+    button.special.next { background: #35683c; font-weight: bold; }
+    .kv { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; font-size: .85rem; }
+    .kv .k { color: #999; }
+    .kv .v { font-variant-numeric: tabular-nums; }
+    .big { font-size: 1.5rem; font-weight: bold; }
+    table.players { border-collapse: collapse; width: 100%; margin-top: 4px; font-size: .8rem; }
+    table.players th, table.players td { border: 1px solid #3a3a45; padding: 3px 6px; text-align: left; font-variant-numeric: tabular-nums; }
+    table.players th { color: #9ad; font-weight: normal; }
+    tr.current { background: #33415c; }
+    #log {
+      font-family: monospace; font-size: .72rem; background: #14141a;
+      border-radius: 4px; padding: 6px; height: 130px; overflow-y: auto;
+      margin-top: 4px; white-space: pre-wrap;
+    }
+    details { margin-top: 8px; font-size: .75rem; }
+    pre { background: #14141a; padding: 6px; border-radius: 4px; overflow-x: auto; max-height: 260px; }
+    .state-RUNNING { color: #5c5; } .state-WAITING { color: #fb0; } .state-FINISHED { color: #f66; }
+  </style>
+</head>
+<body>
+<h1>&#127919; Virtuelles Dartboard &amp; Test-Client</h1>
+<div class="layout">
+
+  <div class="panel">
+    <h2>Verbindung</h2>
+    <div class="row">
+      <div><label>Broker-Host</label><input id="host" value="127.0.0.1"></div>
+      <div style="flex:0 0 90px"><label>WS-Port</label><input id="port" value="8083"></div>
+    </div>
+    <div class="row">
+      <div><label>Benutzer</label><input id="user" value="dartboard"></div>
+      <div><label>Passwort</label><input id="pass" type="password" value="smartness"></div>
+    </div>
+    <label>Dartboard-ID (Topic dartboard/&lt;id&gt;)</label>
+    <input id="boardId" value="1">
+    <button id="connectBtn" onclick="toggleConnect()">Verbinden</button>
+    <div class="status" id="status"><span class="dot"></span><span id="statusText">nicht verbunden</span></div>
+
+    <h2 style="margin-top:12px">Gesendet / Sounds</h2>
+    <div id="log"></div>
+  </div>
+
+  <div class="panel board">
+    <h2>Dartboard</h2>
+    <div class="tabs">
+      <button id="tabBtnSvg" class="active" onclick="showTab('svg')">Dartboard</button>
+      <button id="tabBtnGrid" onclick="showTab('grid')">Buttons</button>
+    </div>
+    <div id="tabSvg">
+      <div id="svgBoard" title=""></div>
+    </div>
+    <div id="tabGrid" style="display:none">
+      <table class="board-grid" id="boardGrid"></table>
+      <div style="margin-top:6px">
+        <button class="bull" onclick="throwCode('125')">Bull</button>
+        <button class="bull" onclick="throwCode('225')">Bullseye</button>
+      </div>
+      <button class="special" onclick="throwCode('998')">998 &mdash; Kein Treffer / Rand</button>
+    </div>
+    <button class="special" onclick="throwCode('997')">997 &mdash; Wandtreffer</button>
+    <button class="special" onclick="throwCode('996')">996 &mdash; Bounce Out / Reset</button>
+    <button class="special next" onclick="throwCode('999')">999 &mdash; NEXT</button>
+  </div>
+
+  <div class="panel game">
+    <h2>Spielstand (status/gameUpdate)</h2>
+    <div class="kv">
+      <span class="k">Status</span><span class="v" id="gameState">&mdash;</span>
+      <span class="k">Spiel</span><span class="v" id="spielInfo">&mdash;</span>
+      <span class="k">Modus</span><span class="v" id="gameMode">X01</span>
+      <span class="k">Am Zug</span><span class="v big" id="currentName">&mdash;</span>
+      <span class="k">Punktestand</span><span class="v big" id="currentScore">&mdash;</span>
+      <span class="k">Freie W&uuml;rfe</span><span class="v" id="freieWuerfe">&mdash;</span>
+      <span class="k">Letzter Wurf</span><span class="v" id="letzterWurf">&mdash;</span>
+      <span class="k">Punkte Spielzug</span><span class="v" id="punkteSpielzug">&mdash;</span>
+    </div>
+    <h2 style="margin-top:10px">Spieler</h2>
+    <table class="players" id="playersTable"></table>
+    <div id="cricketPanel" style="display:none">
+      <h2 style="margin-top:10px">Cricket Marks</h2>
+      <table class="players" id="cricketTable"></table>
+    </div>
+    <h2 style="margin-top:10px">Platzierung</h2>
+    <div id="platzierung" style="font-size:.85rem">&mdash;</div>
+    <details><summary>Rohes JSON</summary><pre id="rawJson">&mdash;</pre></details>
+  </div>
+
+</div>
+
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+<script>
+  const CRICKET_NUMBERS = [15, 16, 17, 18, 19, 20, 25];
+  let client = null;
+
+  // Feld-Raster: 1-20 als Single/Double/Triple (Protokoll siehe Root-README)
+  const grid = document.getElementById('boardGrid');
+  for (let field = 1; field <= 20; field++) {
+    const row = grid.insertRow();
+    [['S', 1], ['D', 2], ['T', 3]].forEach(([label, mult]) => {
+      const code = String(mult) + String(field).padStart(2, '0');
+      const btn = document.createElement('button');
+      btn.className = 'mult-' + label;
+      btn.textContent = label + field;
+      btn.onclick = () => throwCode(code);
+      row.insertCell().appendChild(btn);
+    });
+  }
+
+  function showTab(name) {
+    document.getElementById('tabSvg').style.display = name === 'svg' ? '' : 'none';
+    document.getElementById('tabGrid').style.display = name === 'grid' ? '' : 'none';
+    document.getElementById('tabBtnSvg').classList.toggle('active', name === 'svg');
+    document.getElementById('tabBtnGrid').classList.toggle('active', name === 'grid');
+  }
+
+  // SVG-Dartboard: Zahlenkranz und Ring-Radien wie ein echtes Board
+  // (Maße in mm ab Boardmitte: Bullseye 6.35, Bull 15.9, Triple 99-107,
+  // Double 162-170, Feldrand 170). Klick published denselben Wurf-Code
+  // wie die Buttons; der schwarze Rand außerhalb des Double-Rings = 998.
+  const NUMBER_ORDER = [20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5];
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+
+  function polar(radius, degrees) {
+    const rad = degrees * Math.PI / 180;
+    return [radius * Math.cos(rad), radius * Math.sin(rad)];
+  }
+
+  function ringSectorPath(rInner, rOuter, a0, a1) {
+    const [x0i, y0i] = polar(rInner, a0), [x1i, y1i] = polar(rInner, a1);
+    const [x0o, y0o] = polar(rOuter, a0), [x1o, y1o] = polar(rOuter, a1);
+    return 'M ' + x0i + ' ' + y0i
+      + ' A ' + rInner + ' ' + rInner + ' 0 0 1 ' + x1i + ' ' + y1i
+      + ' L ' + x1o + ' ' + y1o
+      + ' A ' + rOuter + ' ' + rOuter + ' 0 0 0 ' + x0o + ' ' + y0o + ' Z';
+  }
+
+  function svgSegment(shape, attrs, fill, code, label) {
+    const el = document.createElementNS(SVG_NS, shape);
+    Object.entries(attrs).forEach(([key, value]) => el.setAttribute(key, value));
+    el.setAttribute('fill', fill);
+    el.setAttribute('stroke', '#555');
+    el.setAttribute('stroke-width', '0.8');
+    el.setAttribute('class', 'seg');
+    const title = document.createElementNS(SVG_NS, 'title');
+    title.textContent = label + ' (' + code + ')';
+    el.appendChild(title);
+    el.addEventListener('click', () => throwCode(code));
+    return el;
+  }
+
+  function buildSvgBoard() {
+    const BULLSEYE = 6.35, BULL = 15.9, TRI_IN = 99, TRI_OUT = 107,
+      DBL_IN = 162, DBL_OUT = 170, SURROUND = 225, NUMBERS = 196;
+    const BLACK = '#26262c', CREAM = '#e6dbc4', RED = '#c0392b', GREEN = '#1e8449';
+    const svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('viewBox', '-230 -230 460 460');
+
+    // Rand (kein Treffer) als Untergrund
+    svg.appendChild(svgSegment('circle', { cx: 0, cy: 0, r: SURROUND }, '#101014', '998', 'Rand / kein Treffer'));
+
+    NUMBER_ORDER.forEach((field, i) => {
+      const dark = i % 2 === 0; // 20 = schwarz/rot, Nachbarn = hell/grün
+      const single = dark ? BLACK : CREAM;
+      const ring = dark ? RED : GREEN;
+      const a0 = -99 + i * 18, a1 = a0 + 18; // 20 mittig oben
+      const pad = (code) => code + String(field).padStart(2, '0');
+      svg.appendChild(svgSegment('path', { d: ringSectorPath(BULL, TRI_IN, a0, a1) }, single, pad('1'), 'S' + field));
+      svg.appendChild(svgSegment('path', { d: ringSectorPath(TRI_IN, TRI_OUT, a0, a1) }, ring, pad('3'), 'T' + field));
+      svg.appendChild(svgSegment('path', { d: ringSectorPath(TRI_OUT, DBL_IN, a0, a1) }, single, pad('1'), 'S' + field));
+      svg.appendChild(svgSegment('path', { d: ringSectorPath(DBL_IN, DBL_OUT, a0, a1) }, ring, pad('2'), 'D' + field));
+
+      const [tx, ty] = polar(NUMBERS, a0 + 9);
+      const text = document.createElementNS(SVG_NS, 'text');
+      text.setAttribute('x', tx);
+      text.setAttribute('y', ty);
+      text.setAttribute('text-anchor', 'middle');
+      text.setAttribute('dominant-baseline', 'central');
+      text.setAttribute('fill', '#ccc');
+      text.setAttribute('font-size', '26');
+      text.textContent = field;
+      svg.appendChild(text);
+    });
+
+    svg.appendChild(svgSegment('circle', { cx: 0, cy: 0, r: BULL }, GREEN, '125', 'Bull'));
+    svg.appendChild(svgSegment('circle', { cx: 0, cy: 0, r: BULLSEYE }, RED, '225', 'Bullseye'));
+    document.getElementById('svgBoard').appendChild(svg);
+  }
+  buildSvgBoard();
+
+  function log(text) {
+    const el = document.getElementById('log');
+    el.textContent += new Date().toLocaleTimeString() + '  ' + text + '\n';
+    el.scrollTop = el.scrollHeight;
+  }
+
+  function setStatus(connected, text) {
+    document.getElementById('status').classList.toggle('connected', connected);
+    document.getElementById('statusText').textContent = text;
+    document.getElementById('connectBtn').textContent = connected ? 'Trennen' : 'Verbinden';
+  }
+
+  function toggleConnect() {
+    if (client) { client.end(); client = null; setStatus(false, 'nicht verbunden'); return; }
+    const host = document.getElementById('host').value.trim();
+    const port = document.getElementById('port').value.trim();
+    const url = 'ws://' + host + ':' + port + '/';
+    client = mqtt.connect(url, {
+      username: document.getElementById('user').value,
+      password: document.getElementById('pass').value,
+      clientId: 'virtual-dartboard-' + Math.random().toString(16).slice(2, 8)
+    });
+    setStatus(false, 'verbinde mit ' + url + ' ...');
+    client.on('connect', () => {
+      setStatus(true, 'verbunden mit ' + url);
+      client.subscribe('status/gameUpdate', { qos: 1 });
+      client.subscribe('status/playSound', { qos: 2 });
+    });
+    client.on('error', (err) => { setStatus(false, 'Fehler: ' + err.message); });
+    client.on('close', () => { if (client) setStatus(false, 'Verbindung getrennt'); });
+    client.on('message', onMessage);
+  }
+
+  function throwCode(code) {
+    if (!client || !client.connected) { log('nicht verbunden!'); return; }
+    const topic = 'dartboard/' + document.getElementById('boardId').value.trim();
+    client.publish(topic, code, { qos: 2 });
+    log(topic + ' <- ' + code);
+  }
+
+  function onMessage(topic, message) {
+    if (topic === 'status/playSound') {
+      log('SOUND: ' + JSON.parse(message.toString()).sound);
+      return;
+    }
+    const data = JSON.parse(message.toString());
+    document.getElementById('rawJson').textContent = JSON.stringify(data, null, 2);
+
+    const state = data.gameState || '?';
+    const stateEl = document.getElementById('gameState');
+    stateEl.textContent = state;
+    stateEl.className = 'v state-' + state;
+    document.getElementById('spielInfo').textContent = data.spielId + ' / ' + data.anzahlSpiele
+      + ' (Strafpunkt = ' + data.kostenStrafpunkte + ' Cent)';
+    document.getElementById('gameMode').textContent = data.gameMode || 'X01';
+    document.getElementById('letzterWurf').textContent = data.letzterWurf;
+    document.getElementById('punkteSpielzug').textContent = data.punkteSpielzug;
+
+    const current = data.currentPlayer || {};
+    document.getElementById('currentName').textContent = current.name || '—';
+    document.getElementById('currentScore').textContent = current.punktestand ?? '—';
+    document.getElementById('freieWuerfe').textContent = current.freieWuerfe ?? '—';
+
+    renderPlayers(data);
+    renderCricket(data);
+    renderPlatzierung(data);
+  }
+
+  function renderPlayers(data) {
+    const table = document.getElementById('playersTable');
+    table.innerHTML = '<tr><th>Spieler</th><th>Board</th><th>Punkte</th>'
+      + '<th>W&uuml;rfe</th><th>Avg Spiel</th><th>Strafpunkte</th></tr>';
+    (data.spielerReihenfolge || []).forEach(player => {
+      const row = table.insertRow();
+      if (data.currentPlayer && player.name === data.currentPlayer.name) row.className = 'current';
+      const stats = player.statistik || {};
+      [player.name, player.dartboardId, player.punktestand,
+        stats.anzWuerfeSpiel, (stats.avgSpiel ?? 0).toFixed(1), stats.anzStrafpunkte
+      ].forEach(value => { row.insertCell().textContent = value ?? ''; });
+    });
+  }
+
+  function renderCricket(data) {
+    const panel = document.getElementById('cricketPanel');
+    if (data.gameMode !== 'CRICKET' || !data.modeData) { panel.style.display = 'none'; return; }
+    panel.style.display = '';
+    const table = document.getElementById('cricketTable');
+    table.innerHTML = '<tr><th>Spieler</th>'
+      + CRICKET_NUMBERS.map(n => '<th>' + (n === 25 ? 'Bull' : n) + '</th>').join('') + '</tr>';
+    (data.spielerReihenfolge || []).forEach(player => {
+      const row = table.insertRow();
+      row.insertCell().textContent = player.name;
+      CRICKET_NUMBERS.forEach(number => {
+        const marks = parseInt(data.modeData['marks:' + player.name + ':' + number] || '0', 10);
+        row.insertCell().textContent = marks >= 3 ? '✖' : (marks === 0 ? '' : '●'.repeat(marks));
+      });
+    });
+  }
+
+  function renderPlatzierung(data) {
+    const ranking = data.spielerPlatzierung || [];
+    document.getElementById('platzierung').textContent = ranking.length === 0
+      ? '—'
+      : ranking.map((player, i) => (i + 1) + '. ' + player.name).join('   ');
+  }
+</script>
+</body>
+</html>
