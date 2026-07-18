@@ -80,4 +80,30 @@ class LobbyServiceTest {
         assertTrue(lobby.remove("Alice"));
         assertFalse(lobby.remove("Alice"));
     }
+
+    @Test
+    void moveShouldReorderPlayers() {
+        lobby.join("Alice", 1, "client-a");
+        lobby.join("Bob", 1, "client-a");
+        lobby.join("Carol", 2, "client-b");
+        assertTrue(lobby.move("Carol", -1).ok());
+        assertEquals("Carol", lobby.getPlayers().get(1).name());
+        assertTrue(lobby.move("Alice", 1).ok());
+        assertEquals("Carol", lobby.getPlayers().get(0).name());
+    }
+
+    @Test
+    void moveShouldClampAtListEnds() {
+        lobby.join("Alice", 1, "client-a");
+        lobby.join("Bob", 1, "client-a");
+        assertTrue(lobby.move("Alice", -5).ok());
+        assertEquals("Alice", lobby.getPlayers().get(0).name());
+        assertTrue(lobby.move("Alice", 99).ok());
+        assertEquals("Alice", lobby.getPlayers().get(1).name());
+    }
+
+    @Test
+    void moveShouldFailForUnknownPlayer() {
+        assertFalse(lobby.move("Nobody", 1).ok());
+    }
 }

@@ -1,0 +1,395 @@
+/* 10-Fuß-Oberfläche: große Schrift, hoher Kontrast, deutlicher Fokusring.
+   Bedienung nur per Controller/Fernbedienung — kein Hover, keine Maus. */
+
+:root {
+  --bg: #10131a;
+  --panel: #1c212c;
+  --panel-focus: #26304a;
+  --text: #f2f4f8;
+  --muted: #9aa4b5;
+  --accent: #4da3ff;
+  --ok: #66bb6a;
+  --warn: #ffc107;
+  --error: #ef5350;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* das hidden-Attribut muss auch gegen display:flex der Overlays gewinnen */
+[hidden] {
+  display: none !important;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, sans-serif;
+  font-size: 28px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ################### Statuszeile ################### */
+
+#statusBar {
+  display: flex;
+  gap: 2vw;
+  padding: 1vh 3vw;
+  font-size: 0.7em;
+  color: var(--muted);
+  border-bottom: 1px solid #2a3040;
+  min-height: 5vh;
+  align-items: center;
+}
+
+#statusBar .ok { color: var(--ok); }
+#statusBar .warn { color: var(--warn); }
+
+/* ################### Screens ################### */
+
+.screen {
+  flex: 1;
+  padding: 3vh 3vw;
+  overflow-y: auto;
+}
+
+.screen h1 {
+  font-size: 1.6em;
+  margin-bottom: 3vh;
+}
+
+.screen h2 {
+  font-size: 1em;
+  color: var(--muted);
+  margin-bottom: 1.5vh;
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 0.7em;
+  margin-top: 2vh;
+}
+
+/* ################### Fokusierbare Listen ################### */
+
+.menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2vh;
+  max-width: 60vw;
+}
+
+.tv-item {
+  background: var(--panel);
+  color: var(--text);
+  border: 3px solid transparent;
+  border-radius: 12px;
+  padding: 1.6vh 2vw;
+  font-size: 1em;
+  font-family: inherit;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2vw;
+}
+
+.tv-item .value {
+  color: var(--accent);
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.tv-item .sub {
+  color: var(--muted);
+  font-size: 0.7em;
+}
+
+.tv-item.tv-focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--panel-focus);
+  transform: scale(1.02);
+}
+
+.tv-item:disabled,
+.tv-item.disabled {
+  opacity: 0.4;
+}
+
+.badge {
+  font-size: 0.6em;
+  background: #333c50;
+  border-radius: 8px;
+  padding: 0.2em 0.6em;
+  color: var(--muted);
+}
+
+.badge.ok { color: var(--ok); }
+.badge.warn { color: var(--warn); }
+
+/* Lobby: zwei Spalten */
+
+.lobby-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3vw;
+}
+
+.lobby-columns .menu-list {
+  max-width: none;
+}
+
+/* ################### Spielanzeige ################### */
+
+.game-screen {
+  padding: 2vh 2vw;
+}
+
+#gameMeta {
+  color: var(--muted);
+  font-size: 0.7em;
+  margin-bottom: 1vh;
+}
+
+#gameLobbyWait h1 { margin-bottom: 2vh; }
+#gameLobbyWait ul { list-style: none; font-size: 1.2em; }
+
+/* Kachel-Galerie wie im Display-UI: aktive Kachel groß und mittig */
+
+#galleryViewport {
+  overflow: hidden;
+  width: 100%;
+  padding: 2vh 0 3vh 0;
+}
+
+#galleryTrack {
+  display: flex;
+  align-items: center;
+  gap: 1.5vw;
+  width: max-content;
+  transition: transform 0.6s ease;
+  will-change: transform;
+}
+
+.tile {
+  width: 15vw;
+  height: 17vh;
+  background: var(--panel);
+  color: var(--text);
+  border: 0.15vw solid #2a3040;
+  border-radius: 0.8vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  transition: width 0.4s ease, height 0.4s ease, background-color 0.4s ease, color 0.4s ease;
+}
+
+.tile .tile-name { font-size: 1.6vw; font-weight: bold; line-height: 1.2; }
+.tile .tile-score { font-size: 3vw; font-weight: bold; line-height: 1.2; }
+.tile .tile-detail { display: none; }
+
+.tile.active {
+  width: 30vw;
+  height: 34vh;
+  background: #fff;
+  color: #000;
+}
+
+.tile.active .tile-name { font-size: 2.8vw; }
+.tile.active .tile-score { font-size: 6vw; }
+.tile.active .tile-detail {
+  display: block;
+  font-size: 1.8vw;
+  line-height: 1.4;
+}
+
+.tile.active .tile-boxes {
+  font-family: monospace;
+  letter-spacing: 0.2vw;
+}
+
+.tile.active.waiting {
+  background: var(--warn);
+  color: #000;
+}
+
+.tile.active .tile-points span {
+  display: block;
+  line-height: 1.35;
+}
+
+.tile.active .cricket-own { color: #1b5e20; }
+.tile.active .cricket-others { color: #b71c1c; }
+
+/* Cricket-Tabelle */
+
+#cricketBoard {
+  text-align: center;
+  margin-bottom: 2vh;
+}
+
+#cricketTable {
+  border-collapse: collapse;
+  margin: 0 auto;
+}
+
+#cricketTable th,
+#cricketTable td {
+  border: 0.1vw solid #444;
+  padding: 0.4vh 1vw;
+  text-align: center;
+  font-size: 1.6vw;
+  min-width: 3.5vw;
+}
+
+#cricketTable td.closed { color: var(--muted); }
+
+#cricketTable th.active-player,
+#cricketTable td.active-player {
+  background: #fff;
+  color: #000;
+}
+
+#gamePlacement {
+  font-size: 0.8em;
+  color: var(--muted);
+}
+
+/* Aktionsleiste unten auf der Spielanzeige */
+.game-buttons {
+  display: flex;
+  gap: 1.5vw;
+  margin-top: 2vh;
+}
+
+.game-buttons .tv-item {
+  font-size: 0.8em;
+  padding: 1.2vh 1.5vw;
+}
+
+/* NEXT hervorheben, wenn der Zug beendet ist */
+.game-buttons .tv-item.attention {
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
+/* ################### Overlays ################### */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
+
+.overlay-box {
+  background: var(--panel);
+  border-radius: 16px;
+  padding: 4vh 3vw;
+  min-width: 40vw;
+  max-width: 80vw;
+  text-align: center;
+}
+
+.overlay-box p {
+  margin-bottom: 2vh;
+}
+
+.overlay-box .menu-list {
+  max-width: none;
+}
+
+/* Bildschirmtastatur */
+
+.osk-value {
+  font-size: 1.4em;
+  min-height: 1.4em;
+  border-bottom: 3px solid var(--accent);
+  letter-spacing: 0.1em;
+}
+
+#oskGrid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 0.8vh;
+  margin: 2vh 0;
+}
+
+.osk-key {
+  background: var(--bg);
+  color: var(--text);
+  border: 3px solid transparent;
+  border-radius: 8px;
+  padding: 1vh 0;
+  font-size: 0.9em;
+  font-family: inherit;
+  text-align: center;
+}
+
+.osk-key.tv-focus {
+  border-color: var(--accent);
+  background: var(--panel-focus);
+}
+
+/* ################### Toast + GIFs + Legende ################### */
+
+#toast {
+  position: fixed;
+  bottom: 12vh;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--error);
+  color: #fff;
+  padding: 1.5vh 2vw;
+  border-radius: 12px;
+  font-size: 0.9em;
+  z-index: 200;
+  max-width: 80vw;
+  text-align: center;
+}
+
+#toast.info { background: #333c50; }
+
+.event-gif {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px;
+  max-width: 60vw;
+  z-index: 150;
+}
+
+#legend {
+  min-height: 6vh;
+  display: flex;
+  gap: 3vw;
+  align-items: center;
+  padding: 0 3vw;
+  border-top: 1px solid #2a3040;
+  font-size: 0.7em;
+  color: var(--muted);
+}
+
+#legend .glyph {
+  color: var(--text);
+  font-weight: bold;
+  margin-right: 0.4em;
+}

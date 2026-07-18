@@ -86,6 +86,9 @@ public class GameEngine {
     private void handleRunning(DartboardInput input) {
         // during a turn only the current player's dartboard counts
         if (input.dartboardId() != this.turnPlayer.dartboardId()) {
+            System.out.println("[ENGINE] Eingabe von Board " + input.dartboardId()
+                    + " ignoriert - am Zug ist Board " + this.turnPlayer.dartboardId()
+                    + " (" + this.turnPlayer.getName() + ")");
             return;
         }
         switch (input.type()) {
@@ -203,7 +206,8 @@ public class GameEngine {
                 this.game.undoLastTurn();
                 publish();
             }
-            case THROW -> { /* darts during the NEXT wait are void */ }
+            case THROW -> System.out.println(
+                    "[ENGINE] Wurf verworfen - Spielzug ist beendet, warte auf NEXT");
         }
     }
 

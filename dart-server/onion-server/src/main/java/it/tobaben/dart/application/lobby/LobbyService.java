@@ -66,6 +66,23 @@ public class LobbyService {
         return this.players.removeIf(player -> player.name().equals(name));
     }
 
+    /** Host-side reordering: moves a player by offset positions (clamped). */
+    public synchronized LobbyResult move(String name, int offset) {
+        int index = -1;
+        for (int i = 0; i < this.players.size(); i++) {
+            if (this.players.get(i).name().equals(name)) {
+                index = i;
+                break;
+            }
+        }
+        if (index < 0) {
+            return LobbyResult.failure("Spieler '" + name + "' ist nicht in der Lobby");
+        }
+        int target = Math.max(0, Math.min(this.players.size() - 1, index + offset));
+        this.players.add(target, this.players.remove(index));
+        return LobbyResult.success();
+    }
+
     public synchronized void clear() {
         this.players.clear();
     }

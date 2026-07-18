@@ -18,10 +18,17 @@ public class SimpleBleBoardConnection implements DartboardConnectionPort {
     public static final String NOTIFY_UUID = "0000ffe1-0000-1000-8000-00805f9b34fb";
     static final long RECONNECT_BACKOFF_MILLIS = 5000;
     static final int FIND_SCAN_MILLIS = 6000;
+    /* Das Smartness-Board wird nach Inaktivität still, obwohl die Verbindung
+       laut Stack weiter "connected" ist (Schlafmodus / verlorene Notify-
+       Subscription). Ohne Daten wird die Verbindung deshalb vorsorglich neu
+       aufgebaut — schläft das Board wirklich, scheitert der Reconnect sichtbar
+       (Status RECONNECTING) statt still "verbunden" anzuzeigen. */
+    static final long IDLE_RESUBSCRIBE_MILLIS = 5 * 60 * 1000;
 
     private final String mac;
     private volatile boolean closed;
     private volatile Peripheral peripheral;
+    private volatile long lastNotificationMillis;
     private Thread worker;
 
     public SimpleBleBoardConnection(String mac) {
@@ -48,11 +55,24 @@ public class SimpleBleBoardConnection implements DartboardConnectionPort {
                 found.connect();
                 this.peripheral = found;
                 found.notify(new BluetoothUUID(SERVICE_UUID), new BluetoothUUID(NOTIFY_UUID),
-                        data -> onWireCode.accept(BoardHexCodec.toWireCode(data)));
+                        data -> {
+                            this.lastNotificationMillis = System.currentTimeMillis();
+                            String wireCode = BoardHexCodec.toWireCode(data);
+                            System.out.println("[BLE] " + this.mac + " Treffer → " + wireCode);
+                            onWireCode.accept(wireCode);
+                        });
                 onStatus.accept(BoardStatus.CONNECTED);
+                this.lastNotificationMillis = System.currentTimeMillis();
                 while (!this.closed && found.isConnected()) {
                     Thread.sleep(1000);
+                    if (System.currentTimeMillis() - this.lastNotificationMillis > IDLE_RESUBSCRIBE_MILLIS) {
+                        System.out.println("[BLE] " + this.mac + ": "
+                                + (IDLE_RESUBSCRIBE_MILLIS / 60000)
+                                + " min ohne Daten - Verbindung wird vorsorglich erneuert");
+                        break;
+                    }
                 }
+                disconnectQuietly();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;

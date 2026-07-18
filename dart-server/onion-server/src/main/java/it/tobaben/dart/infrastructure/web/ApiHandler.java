@@ -49,6 +49,10 @@ public class ApiHandler implements HttpHandler {
                 respondResult(exchange, this.context.getSession().closeLobby());
             } else if ("POST /api/lobby/players".equals(route)) {
                 handleAddPlayer(exchange);
+            } else if (exchange.getRequestMethod().equals("POST")
+                    && exchange.getRequestURI().getPath().startsWith("/api/lobby/players/")
+                    && exchange.getRequestURI().getPath().endsWith("/move")) {
+                handleMovePlayer(exchange);
             } else if (exchange.getRequestMethod().equals("DELETE")
                     && exchange.getRequestURI().getPath().startsWith("/api/lobby/players/")) {
                 handleRemovePlayer(exchange);
@@ -102,6 +106,15 @@ public class ApiHandler implements HttpHandler {
                 .joinLobby(name, dartboardId, LobbyPlayer.LOCAL_CLIENT_ID));
     }
 
+    /** POST /api/lobby/players/{name}/move mit {"offset": -1|1} */
+    private void handleMovePlayer(HttpExchange exchange) throws IOException {
+        String path = exchange.getRequestURI().getPath();
+        String encoded = path.substring("/api/lobby/players/".length(), path.length() - "/move".length());
+        String name = URLDecoder.decode(encoded, StandardCharsets.UTF_8);
+        JsonObject body = readBody(exchange);
+        respondResult(exchange, this.context.getSession().movePlayer(name, intOr(body, "offset", 0)));
+    }
+
     private void handleRemovePlayer(HttpExchange exchange) throws IOException {
         String encoded = exchange.getRequestURI().getPath().substring("/api/lobby/players/".length());
         String name = URLDecoder.decode(encoded, StandardCharsets.UTF_8);
@@ -147,7 +160,7 @@ public class ApiHandler implements HttpHandler {
                 stringOr(body, "playerName", null)));
     }
 
-    /** POST /api/boards/{mac}/connect and /api/boards/{mac}/disconnect */
+    /** POST /api/boards/{mac}/connect, .../disconnect und .../reconnect */
     private void handleBoardAction(HttpExchange exchange) throws IOException {
         String rest = exchange.getRequestURI().getPath().substring("/api/boards/".length());
         int slash = rest.lastIndexOf('/');
@@ -165,6 +178,8 @@ public class ApiHandler implements HttpHandler {
             respondResult(exchange, this.context.getBoardService().connect(mac, intOr(body, "dartboardId", -1)));
         } else if ("disconnect".equals(action)) {
             respondResult(exchange, this.context.getBoardService().disconnect(mac));
+        } else if ("reconnect".equals(action)) {
+            respondResult(exchange, this.context.getBoardService().reconnect(mac));
         } else {
             respond(exchange, 404, error("Unbekannte Board-Aktion: " + action));
         }

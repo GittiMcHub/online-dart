@@ -133,6 +133,7 @@ public class MqttAdapter implements MqttCallbackExtended, GameUpdatePublisherPor
         }
         Optional<DartboardInput> input = SegmentCodec.decode(dartboardId, payload);
         if (input.isPresent()) {
+            System.out.println("[MQTT] Wurf-Eingang " + topic + ": " + payload);
             this.inputQueue.offer(input.get());
         } else {
             System.out.println("[MQTT] Ungültige Nachricht verworfen: '" + payload + "' auf " + topic);

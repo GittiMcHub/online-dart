@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import it.tobaben.dart.application.lobby.LobbyResult;
 import it.tobaben.dart.application.session.ServerSession;
+import it.tobaben.dart.application.session.SessionPhase;
 
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -14,6 +15,11 @@ import java.util.concurrent.atomic.AtomicLong;
  * so late joiners and displays see the lineup immediately. The seq counter
  * starts at the wall clock so a restarted server always outbids its own stale
  * retained state.
+ *
+ * The adapter stays passive until the local session was active at least once
+ * (lobby opened): a COMBINED instance that joins a foreign broker only as a
+ * client must neither overwrite the remote server's retained lobby/state nor
+ * answer join requests meant for the remote server.
  */
 public class MqttLobbyAdapter {
 
@@ -32,6 +38,7 @@ public class MqttLobbyAdapter {
     // the session outlives broker reconfigurations, its listener list only
     // grows — a detached adapter must stop publishing on the dead connection
     private volatile boolean detached;
+    private volatile boolean activeLocally;
 
     public MqttLobbyAdapter(MqttAdapter mqtt, ServerSession session, String serverName) {
         this.mqtt = mqtt;
@@ -46,9 +53,17 @@ public class MqttLobbyAdapter {
         publishState();
     }
 
+    /** @return true as soon as the local session was ever non-IDLE on this broker */
+    private boolean isActive() {
+        if (!this.activeLocally && this.session.getPhase() != SessionPhase.IDLE) {
+            this.activeLocally = true;
+        }
+        return this.activeLocally;
+    }
+
     /** Leaves a retained IDLE state behind so clients see the lobby as closed. */
     public void shutdown() {
-        if (this.detached) {
+        if (this.detached || !this.activeLocally) {
             return;
         }
         JsonObject closed = new JsonObject();
@@ -65,6 +80,9 @@ public class MqttLobbyAdapter {
     }
 
     private void handleJoin(String payload) {
+        if (!isActive()) {
+            return; // fremder Server auf diesem Broker beantwortet die Anfrage
+        }
         try {
             JsonObject json = JsonParser.parseString(payload).getAsJsonObject();
             String clientId = json.get("clientId").getAsString();
@@ -79,6 +97,9 @@ public class MqttLobbyAdapter {
     }
 
     private void handleLeave(String payload) {
+        if (!isActive()) {
+            return;
+        }
         try {
             JsonObject json = JsonParser.parseString(payload).getAsJsonObject();
             String clientId = json.get("clientId").getAsString();
@@ -100,7 +121,7 @@ public class MqttLobbyAdapter {
     }
 
     private void publishState() {
-        if (this.detached) {
+        if (this.detached || !isActive()) {
             return;
         }
         this.mqtt.publish(STATE_TOPIC,

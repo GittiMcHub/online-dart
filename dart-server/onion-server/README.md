@@ -70,6 +70,7 @@ java -jar onion-server-2.0-all.jar --mode client --web-port 8421 \
 |------|-------|
 | `/` | Verwaltung (Broker, Lobby, Boards, Turnier) — REST + Server-Sent-Events |
 | `/display/` | Punkteanzeige wie der webapp-client, für jeden Browser im LAN; Broker-Zugang kommt automatisch aus `/config.js` |
+| `/tv/` | Controller-optimierte TV-Oberfläche (Menü → Lobby → Spiel) für Wohnzimmer/SteamOS, bedienbar per Gamepad oder Pfeiltasten — siehe `dart-steamos/` |
 | `/api/state` | Gesamtzustand als JSON (auch für eigene Tools) |
 
 Die Anzeige verbindet sich per MQTT-over-WebSocket direkt auf den Broker

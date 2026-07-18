@@ -124,6 +124,18 @@ public class ServerSession {
         return result;
     }
 
+    /** Host-side reordering of the lobby lineup (web UI). */
+    public synchronized LobbyResult movePlayer(String name, int offset) {
+        if (this.phase != SessionPhase.LOBBY) {
+            return LobbyResult.failure("Lobby ist nicht geöffnet");
+        }
+        LobbyResult result = this.lobby.move(name, offset);
+        if (result.ok()) {
+            fireChange();
+        }
+        return result;
+    }
+
     /** Removes every player of a disconnected client (MQTT Last-Will). */
     public synchronized void clientDisconnected(String clientId) {
         if (this.phase == SessionPhase.LOBBY && this.lobby.leaveAll(clientId)) {

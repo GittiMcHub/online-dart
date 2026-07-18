@@ -106,8 +106,24 @@ class MqttLobbyIntegrationTest {
     }
 
     @Test
+    void neverOpenedServerStaysPassiveOnBroker() {
+        // Ein Server, dessen Lobby nie geöffnet war, bleibt am Broker still:
+        // er könnte nur Client an einem fremden Server sein und darf dessen
+        // lobby/state und join-Antworten nicht stören.
+        assertNull(clientSession.getRemoteLobby());
+        LobbyResult result = clientSession.join("Zu-Frueh", 1);
+        assertFalse(result.ok());
+        assertTrue(result.error().contains("Keine Antwort"));
+    }
+
+    @Test
     void joinWithClosedLobbyIsRejected() {
-        await(() -> clientSession.getRemoteLobby() != null);
+        server.getSession().openLobby();
+        await(() -> clientSession.getRemoteLobby() != null
+                && "LOBBY".equals(clientSession.getRemoteLobby().phase()));
+        server.getSession().closeLobby();
+        await(() -> "IDLE".equals(clientSession.getRemoteLobby().phase()));
+
         LobbyResult result = clientSession.join("Zu-Frueh", 1);
         assertFalse(result.ok());
         assertTrue(result.error().contains("nicht geöffnet"));

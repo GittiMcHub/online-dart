@@ -145,6 +145,37 @@ public class BoardService {
         return LobbyResult.success();
     }
 
+    /**
+     * Tears the connection down and rebuilds it with the same dartboard id —
+     * for boards that look connected but silently stopped notifying.
+     */
+    public synchronized LobbyResult reconnect(String mac) {
+        ManagedBoard board = this.boards.get(mac.toLowerCase());
+        if (board == null) {
+            return LobbyResult.failure("Board " + mac + " ist nicht verbunden");
+        }
+        board.connection.close();
+        DartboardConnectionPort connection;
+        try {
+            connection = this.connectionFactory.apply(board.mac());
+        } catch (BleUnavailableException e) {
+            this.boards.remove(board.mac());
+            fireChange();
+            return LobbyResult.failure(e.getMessage());
+        }
+        ManagedBoard fresh = new ManagedBoard(board.mac(), board.name(), board.dartboardId(), connection);
+        this.boards.put(fresh.mac(), fresh);
+        int dartboardId = fresh.dartboardId();
+        connection.open(
+                code -> this.throwPublisher.publishThrow(dartboardId, code),
+                status -> {
+                    fresh.status = status;
+                    fireChange();
+                });
+        fireChange();
+        return LobbyResult.success();
+    }
+
     public synchronized LobbyResult disconnect(String mac) {
         ManagedBoard board = this.boards.remove(mac.toLowerCase());
         if (board == null) {

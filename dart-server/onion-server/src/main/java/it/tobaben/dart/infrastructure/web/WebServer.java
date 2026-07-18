@@ -17,6 +17,7 @@ import java.util.concurrent.Executors;
  * <ul>
  *   <li>/ — management UI (classpath web/management)</li>
  *   <li>/display/ — score display for any browser in the LAN (web/display)</li>
+ *   <li>/tv/ — controller-optimierte TV-Oberfläche, z.B. SteamOS (web/tv)</li>
  *   <li>/config.js — runtime broker settings for the display</li>
  *   <li>/api/ — management REST + SSE</li>
  * </ul>
@@ -40,6 +41,7 @@ public class WebServer {
         this.server.setExecutor(this.executor);
         this.server.createContext("/", new StaticResourceHandler("", "web/management"));
         this.server.createContext("/display", new StaticResourceHandler("/display", "web/display"));
+        this.server.createContext("/tv", new StaticResourceHandler("/tv", "web/tv"));
         this.server.createContext("/config.js", this::handleConfigJs);
         this.server.createContext("/api/", new ApiHandler(this.context, this.sseHub));
         this.server.start();
