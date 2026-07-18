@@ -5,6 +5,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import it.tobaben.dart.application.EngineState;
 import it.tobaben.dart.application.EngineUpdate;
+import it.tobaben.dart.application.PlayerStatistics;
 import it.tobaben.dart.application.RegisteredPlayer;
 import it.tobaben.dart.game.x01.X01Game;
 
@@ -55,6 +56,32 @@ public final class AnthraxJsonMapper {
             }
             root.add("modeData", modeData);
         }
+        return GSON.toJson(root);
+    }
+
+    /**
+     * The between-tournaments state: gameState UNDEFINED, empty player lists, a
+     * placeholder currentPlayer (schema requires the field). Sent when the
+     * server goes back to IDLE so displays show "kein Spiel".
+     */
+    public static String idleUpdateJson() {
+        JsonObject root = new JsonObject();
+        root.add("spielerPlatzierung", new JsonArray());
+        root.add("spielerReihenfolge", new JsonArray());
+        JsonObject nobody = new JsonObject();
+        nobody.addProperty("id", -1);
+        nobody.addProperty("dartboardId", -1);
+        nobody.addProperty("name", "-");
+        nobody.addProperty("punktestand", 0);
+        nobody.addProperty("freieWuerfe", 0);
+        nobody.add("statistik", GSON.toJsonTree(new PlayerStatistics()));
+        root.add("currentPlayer", nobody);
+        root.addProperty("kostenStrafpunkte", 0);
+        root.addProperty("anzahlSpiele", 0);
+        root.addProperty("spielId", 0);
+        root.addProperty("punkteSpielzug", 0);
+        root.addProperty("letzterWurf", 0);
+        root.addProperty("gameState", EngineState.UNDEFINED.name());
         return GSON.toJson(root);
     }
 

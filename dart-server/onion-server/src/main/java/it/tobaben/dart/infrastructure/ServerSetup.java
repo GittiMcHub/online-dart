@@ -50,6 +50,13 @@ public final class ServerSetup {
         options.addOption(Option.builder().longOpt("no-schnapszahl-penalty").desc("Schnapszahl-Strafpunkte deaktivieren").build());
         options.addOption(Option.builder().longOpt("no-wallhit-penalty").desc("Wandtreffer-Strafpunkte deaktivieren").build());
         options.addOption(Option.builder().longOpt("no-placement-penalty").desc("Platzierungs-Strafpunkte deaktivieren").build());
+
+        // long-lived web mode (without --player); see AppSetup
+        options.addOption(Option.builder().longOpt("mode").hasArg().argName("modus").desc("Betriebsmodus: server, client oder combined (Default combined)").build());
+        options.addOption(Option.builder().longOpt("web-port").hasArg().argName("port").desc("Port des Web-Interfaces (Default 8420)").build());
+        options.addOption(Option.builder().longOpt("server-name").hasArg().argName("name").desc("Anzeigename des Servers in der Lobby").build());
+        options.addOption(Option.builder().longOpt("auto-broker").desc("MQTT-Broker beim Start sofort gemäß Flags starten/verbinden (headless, ohne Klick im Web-UI)").build());
+
         options.addOption(Option.builder().longOpt("help").desc("Diese Hilfe anzeigen").build());
         return options;
     }
@@ -108,7 +115,7 @@ public final class ServerSetup {
                 games, penaltyCost, players, houseRules));
     }
 
-    private static MqttConfig resolveMqtt(CommandLine cmd) {
+    static MqttConfig resolveMqtt(CommandLine cmd) {
         boolean embedded = cmd.hasOption("embedded-broker");
         boolean fullFlags = cmd.hasOption("mqtt-host") && cmd.hasOption("mqtt-user") && cmd.hasOption("mqtt-password");
         // With the embedded broker the server is self-contained: the conf file

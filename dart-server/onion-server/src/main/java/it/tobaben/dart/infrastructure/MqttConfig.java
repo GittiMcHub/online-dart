@@ -19,6 +19,10 @@ public record MqttConfig(String host, int port, String username, String password
         return "tcp://" + this.host + ":" + this.port;
     }
 
+    public MqttConfig withClientId(String newClientId) {
+        return new MqttConfig(this.host, this.port, this.username, this.password, newClientId, this.qos);
+    }
+
     public static MqttConfig fromFile(Path path) {
         try {
             Properties properties = new Properties();

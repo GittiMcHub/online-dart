@@ -1,0 +1,159 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: system-ui, sans-serif;
+    background: #1c1f26;
+    color: #e8e8e8;
+}
+
+header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.8rem 1.5rem;
+    background: #12141a;
+    border-bottom: 2px solid #2e7d32;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 1.4rem;
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.7rem;
+    margin-left: 0.4rem;
+    border-radius: 1rem;
+    font-size: 0.85rem;
+    background: #37474f;
+}
+
+.badge.green {
+    background: #2e7d32;
+}
+
+.badge.orange {
+    background: #ef6c00;
+}
+
+.badge.blue {
+    background: #1565c0;
+}
+
+main {
+    max-width: 60rem;
+    margin: 0 auto;
+    padding: 1rem 1.5rem 3rem;
+}
+
+section {
+    background: #262a33;
+    border-radius: 0.6rem;
+    padding: 1rem 1.4rem;
+    margin-top: 1.2rem;
+}
+
+h2 {
+    margin-top: 0;
+    font-size: 1.1rem;
+    color: #9ccc65;
+}
+
+.row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    margin: 0.6rem 0;
+}
+
+label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.95rem;
+}
+
+input[type="text"], input[type="number"], input[type="password"], select {
+    background: #1c1f26;
+    color: #e8e8e8;
+    border: 1px solid #455a64;
+    border-radius: 0.3rem;
+    padding: 0.35rem 0.5rem;
+    width: 9rem;
+}
+
+input[type="number"] {
+    width: 6rem;
+}
+
+button {
+    background: #2e7d32;
+    color: #fff;
+    border: none;
+    border-radius: 0.3rem;
+    padding: 0.5rem 1.1rem;
+    font-size: 0.95rem;
+    cursor: pointer;
+}
+
+button:hover {
+    filter: brightness(1.15);
+}
+
+button:disabled {
+    background: #455a64;
+    cursor: not-allowed;
+}
+
+button.danger {
+    background: #c62828;
+}
+
+.status {
+    margin-left: 0.8rem;
+    font-size: 0.9rem;
+}
+
+.status.error {
+    color: #ef9a9a;
+}
+
+.status.ok {
+    color: #a5d6a7;
+}
+
+ul#playerList, ul#remotePlayerList, ul#discoveredList, ul#connectedList {
+    list-style: none;
+    padding: 0;
+}
+
+ul#remotePlayerList li,
+ul#discoveredList li,
+ul#connectedList li,
+ul#playerList li {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid #37474f;
+}
+
+ul#playerList li .remote {
+    font-size: 0.8rem;
+    color: #90caf9;
+}
+
+ul#playerList li button {
+    padding: 0.15rem 0.6rem;
+    font-size: 0.8rem;
+    background: #c62828;
+}
+
+a {
+    color: #9ccc65;
+}

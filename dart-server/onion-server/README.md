@@ -1,10 +1,13 @@
 # onion-server
 
-Dart-Gameserver für onlineDart — Neuimplementierung des anthrax-servers nach
-Onion-Architektur. Funktioniert als **1:1-Ersatz** (gleiche MQTT-Topics,
-gleiches `status/gameUpdate`-JSON nach `dart-server/schema.json`, gleiche
-Sounds), kann aber mehrere Spielmodi: **X01** (301/501/frei, optional
-Double-In/Out) und **Cricket**.
+Dart-Server **und -Client in einem** für onlineDart — Neuimplementierung des
+anthrax-servers nach Onion-Architektur. Funktioniert als **1:1-Ersatz**
+(gleiche MQTT-Topics, gleiches `status/gameUpdate`-JSON nach
+`dart-server/schema.json`, gleiche Sounds), kann aber mehrere Spielmodi
+(**X01** mit optional Double-In/Out und **Cricket**) und läuft wahlweise als
+langlebige Anwendung mit Web-Verwaltung, Lobby für Remote-Spieler,
+eingebauter Punkteanzeige fürs LAN und direkter Bluetooth-Anbindung der
+Dartboards (SimpleJavaBLE) — oder klassisch als One-Shot-Server per CLI.
 
 ## Schnellstart
 
@@ -12,35 +15,93 @@ Voraussetzung: Java 17+.
 
 ```bash
 ./gradlew fatJar
-java -jar build/libs/onion-server-1.0-SNAPSHOT-all.jar --help
+java -jar build/libs/onion-server-2.0-all.jar --help
 ```
 
-**Variante A — alles in einem Prozess (kein Docker, kein Mosquitto):**
+**Web-Modus (Standard, ohne `--player`):**
 
 ```bash
-java -jar build/libs/onion-server-1.0-SNAPSHOT-all.jar \
+java -jar build/libs/onion-server-2.0-all.jar
+# Browser: http://localhost:8420/
+```
+
+Es öffnet die Web-Verwaltung: Broker starten (eingebettet oder extern),
+Lobby öffnen, Spieler anlegen bzw. Remote-Clients beitreten lassen, Turnier
+konfigurieren und starten — beliebig viele Turniere nacheinander, ohne
+Neustart. Die Punkteanzeige für jeden Browser im LAN liegt unter
+`http://<server-ip>:8420/display/` (kein Internet nötig, alles lokal
+gebundelt).
+
+**Klassischer One-Shot (wie bisher, sobald `--player` gesetzt ist):**
+
+```bash
+java -jar build/libs/onion-server-2.0-all.jar \
   --embedded-broker \
   --player Alice:1 --player Bob:2
 ```
 
 Der Server startet einen eingebetteten MQTT-Broker (Moquette) auf TCP-Port
-1883 und WebSocket-Port 8083 (Login `dartboard`/`smartness`) und verbindet
-sich selbst damit. Dartboard-Connectoren und Clients (webapp,
-`tools/virtualDartboard`) verbinden sich auf die IP dieses Rechners.
-Alles, was nicht als Flag gesetzt ist, wird interaktiv abgefragt.
+1883 und WebSocket-Port 8083 (Login `dartboard`/`smartness`), spielt genau
+ein Turnier und beendet sich — exakt das bisherige Verhalten, bestehende
+Aufrufe und anthrax-Configfiles laufen unverändert. Externer Broker wie
+gehabt über `--mqtt-config ./mqttbroker.conf` bzw. `--mqtt-host` & Co.
 
-**Variante B — externer Broker (Mosquitto, siehe `dart-broker/README.md`):**
+## Betriebsmodi (`--mode`, Default `combined`)
+
+| Modus      | Bedeutung |
+|------------|-----------|
+| `server`   | Lobby, Turnier, Web-Anzeige — keine lokalen Dartboards |
+| `client`   | Dartboards per Bluetooth suchen/verbinden, Spieler in die Lobby eines entfernten Servers schicken |
+| `combined` | beides: der Rechner, der den Server startet, kann auch selbst Boards verbinden und mitspielen |
 
 ```bash
-java -jar build/libs/onion-server-1.0-SNAPSHOT-all.jar \
-  --mqtt-config ./mqttbroker.conf \
-  --game-mode x01 --start-score 501 --games 3 \
-  --player Alice:1 --player Bob:2
+# Server-Rechner (startet Broker + Verwaltung sofort, headless-tauglich):
+java -jar onion-server-2.0-all.jar --mode server --auto-broker --server-name "Keller"
+
+# Client-Rechner (verbindet sich auf den Broker des Servers):
+java -jar onion-server-2.0-all.jar --mode client --web-port 8421 \
+  --mqtt-host <server-ip> --mqtt-user dartboard --mqtt-password smartness --auto-broker
+# Browser: http://localhost:8421/ → Board suchen → verbinden → Lobby beitreten
 ```
 
-Ohne `--mqtt-config` wird `./mqttbroker.conf` im Arbeitsverzeichnis gelesen
-(anthrax-Format, ein Beispiel liegt im Projektordner). Bestehende
-anthrax-Configfiles laufen unverändert.
+### Web-Interface (Port `--web-port`, Default 8420)
+
+| Pfad | Zweck |
+|------|-------|
+| `/` | Verwaltung (Broker, Lobby, Boards, Turnier) — REST + Server-Sent-Events |
+| `/display/` | Punkteanzeige wie der webapp-client, für jeden Browser im LAN; Broker-Zugang kommt automatisch aus `/config.js` |
+| `/api/state` | Gesamtzustand als JSON (auch für eigene Tools) |
+
+Die Anzeige verbindet sich per MQTT-over-WebSocket direkt auf den Broker
+(Port 8083) — die Zugangsdaten stehen dafür in `/config.js` und sind damit
+im LAN sichtbar (gleiches Niveau wie bisher hardcodiert im webapp-client).
+
+### Lobby über MQTT (für eigene Clients)
+
+| Topic | Richtung | QoS | Retained | Inhalt |
+|-------|----------|-----|----------|--------|
+| `lobby/state` | Server → alle | 1 | ja | `{phase, serverName, players:[{name,dartboardId,clientId,local}], gameConfig, seq}` |
+| `lobby/join`  | Client → Server | 1 | nein | `{requestId, clientId, playerName, dartboardId}` |
+| `lobby/leave` | Client → Server | 1 | nein | `{requestId, clientId, playerName}` — `playerName:"*"` entfernt alle Spieler des Clients (auch als MQTT Last-Will gesetzt) |
+| `lobby/response/<clientId>` | Server → ein Client | 1 | nein | `{requestId, ok, error?}` |
+
+Regeln: Spielernamen sind eindeutig; mehrere Spieler desselben Clients dürfen
+sich ein Board teilen, ein Board gehört aber immer nur einem Client; Beitritt
+nur bei geöffneter Lobby. Die Lobby-Aufstellung bleibt über Turniere hinweg
+erhalten.
+
+### Bluetooth-Dartboards (Client-/Combined-Modus)
+
+Scan und Verbindung laufen direkt in Java über
+[SimpleJavaBLE](https://github.com/simpleble/simpleble) (vendored unter
+`libs/`, Build-Rezept und Lizenzhinweis in `libs/README.md`; Native-Library
+aktuell für Linux x64 — auf anderen Plattformen bleibt der Python-Connector
+`dart-board-connector/dartBlueMqttConnector` der Weg). Verbundene Boards
+publishen ihre Würfe ganz normal auf `dartboard/<id>` (QoS 2) über den
+Broker — Schiedsrichter-Buttons der Anzeige und Python-Connectoren mischen
+sich also nahtlos. Verbindungsabrisse werden mit 5 s Backoff automatisch
+neu verbunden (Boards schlafen nach Inaktivität ein; ein Tastendruck oder
+Wurf weckt sie).
 
 ## Spielablauf
 
@@ -61,9 +122,19 @@ Connector-Konfiguration passen.
 
 ## CLI-Referenz
 
-Jedes Flag ist optional. Spielparameter ohne Flag werden interaktiv
-abgefragt (Enter = Default); MQTT-Werte kommen aus der Conf-Datei und werden
-nie abgefragt.
+Jedes Flag ist optional. Ohne `--player` startet der Web-Modus; mit
+`--player` der klassische One-Shot, bei dem fehlende Spielparameter
+interaktiv abgefragt werden (Enter = Default). MQTT-Werte kommen aus der
+Conf-Datei und werden nie abgefragt.
+
+### Web-Modus
+
+| Flag            | Bedeutung                                          | Default       |
+|-----------------|----------------------------------------------------|---------------|
+| `--mode`        | `server`, `client` oder `combined`                 | `combined`    |
+| `--web-port`    | Port des Web-Interfaces                            | 8420          |
+| `--server-name` | Anzeigename des Servers in der Lobby               | `Dart-Server` |
+| `--auto-broker` | Broker beim Start sofort gemäß Flags starten/verbinden (sonst per Klick im Web-UI) | aus |
 
 ### MQTT (überschreibt die Conf-Datei)
 
@@ -179,7 +250,7 @@ Bounce-Out (`996`) mitten im Spielzug verwirft den laufenden Spielzug;
 ./gradlew build          # kompilieren + alle Tests
 ./gradlew test           # nur Tests (Domäne, Application, Infrastruktur)
 ./gradlew run --args="--help"
-./gradlew fatJar         # build/libs/onion-server-1.0-SNAPSHOT-all.jar
+./gradlew fatJar         # build/libs/onion-server-2.0-all.jar
 ```
 
 ### Architektur (Onion, 3 Ringe — Abhängigkeiten zeigen nur nach innen)

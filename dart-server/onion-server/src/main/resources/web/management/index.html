@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dart Server – Verwaltung</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+    <h1>🎯 Dart Server</h1>
+    <div id="headerStatus">
+        <span id="modeBadge" class="badge"></span>
+        <span id="phaseBadge" class="badge"></span>
+        <span id="brokerBadge" class="badge"></span>
+    </div>
+</header>
+
+<main>
+    <section id="brokerSection">
+        <h2>1. MQTT-Broker</h2>
+        <div class="row">
+            <label><input type="radio" name="brokerType" value="embedded" checked> Eingebetteten Broker starten</label>
+            <label><input type="radio" name="brokerType" value="external"> Mit externem Broker verbinden</label>
+        </div>
+        <div id="embeddedFields" class="row">
+            <label>MQTT-Port <input type="number" id="brokerPort" value="1883"></label>
+            <label>WebSocket-Port <input type="number" id="brokerWsPort" value="8083"></label>
+        </div>
+        <div id="externalFields" class="row" hidden>
+            <label>Host <input type="text" id="brokerHost" placeholder="10.0.10.1"></label>
+            <label>Port <input type="number" id="brokerExtPort" value="1883"></label>
+            <label>Benutzer <input type="text" id="brokerUser" value="dartboard"></label>
+            <label>Passwort <input type="password" id="brokerPassword" value="smartness"></label>
+        </div>
+        <button id="brokerButton">Broker starten</button>
+        <span id="brokerStatus" class="status"></span>
+    </section>
+
+    <section id="boardsSection" hidden>
+        <h2>Dartboards (Bluetooth)</h2>
+        <div class="row">
+            <button id="scanButton">Nach Dartboards suchen</button>
+            <span id="scanStatus" class="status"></span>
+        </div>
+        <ul id="discoveredList"></ul>
+        <h3>Verbundene Boards</h3>
+        <ul id="connectedList"></ul>
+    </section>
+
+    <section id="clientSection" hidden>
+        <h2>Lobby beitreten (Client)</h2>
+        <p id="remoteLobbyInfo">Noch keine Lobby-Informationen vom Server.</p>
+        <form id="clientJoinForm" class="row">
+            <label>Name <input type="text" id="clientPlayerName" required></label>
+            <label>Dartboard-ID <input type="number" id="clientBoardId" value="1" min="0" required></label>
+            <button type="submit">Beitreten</button>
+        </form>
+        <ul id="remotePlayerList"></ul>
+        <span id="clientStatus" class="status"></span>
+    </section>
+
+    <section id="lobbySection">
+        <h2>2. Lobby</h2>
+        <div class="row">
+            <button id="lobbyOpenButton">Lobby öffnen</button>
+            <button id="lobbyCloseButton" hidden>Lobby schließen</button>
+        </div>
+        <div id="lobbyContent" hidden>
+            <form id="addPlayerForm" class="row">
+                <label>Name <input type="text" id="playerName" required></label>
+                <label>Dartboard-ID <input type="number" id="playerBoardId" value="1" min="0" required></label>
+                <button type="submit">Spieler hinzufügen</button>
+            </form>
+            <ul id="playerList"></ul>
+        </div>
+    </section>
+
+    <section id="tournamentSection">
+        <h2>3. Turnier</h2>
+        <div id="tournamentForm">
+            <div class="row">
+                <label>Anzahl Spiele <input type="number" id="games" value="1" min="1"></label>
+                <label>Spielmodus
+                    <select id="gameMode">
+                        <option value="x01">X01</option>
+                        <option value="cricket">Cricket</option>
+                    </select>
+                </label>
+                <label id="startScoreLabel">Startpunkte <input type="number" id="startScore" value="301"></label>
+                <label>Cent pro Strafpunkt <input type="number" id="penaltyCost" value="0" min="0"></label>
+            </div>
+            <div class="row" id="x01Options">
+                <label><input type="checkbox" id="doubleIn"> Double-In</label>
+                <label><input type="checkbox" id="doubleOut"> Double-Out</label>
+            </div>
+            <div class="row">
+                <label><input type="checkbox" id="schnapszahlPenalty" checked> Schnapszahl-Strafe</label>
+                <label><input type="checkbox" id="wallHitPenalty" checked> Wandtreffer-Strafe</label>
+                <label><input type="checkbox" id="placementPenalty" checked> Platzierungs-Strafe</label>
+            </div>
+            <button id="startButton">Turnier starten</button>
+            <button id="abortButton" class="danger" hidden>Turnier abbrechen</button>
+            <span id="tournamentStatus" class="status"></span>
+        </div>
+    </section>
+
+    <section id="statusSection">
+        <h2>Anzeige &amp; Ergebnisse</h2>
+        <p>Punkteanzeige für Browser im LAN: <a id="displayLink" href="/display/" target="_blank">/display/</a></p>
+        <div id="currentGame" hidden>
+            <h3>Laufendes Spiel</h3>
+            <p id="gameSummary"></p>
+        </div>
+        <div id="results" hidden>
+            <h3>Letzte Ergebnisse</h3>
+            <ol id="resultsList"></ol>
+        </div>
+    </section>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>

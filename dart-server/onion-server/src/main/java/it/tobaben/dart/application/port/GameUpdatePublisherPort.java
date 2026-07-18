@@ -8,4 +8,11 @@ import it.tobaben.dart.application.EngineUpdate;
  */
 public interface GameUpdatePublisherPort {
     void publish(EngineUpdate update);
+
+    /**
+     * Publishes the "no game running" state (gameState UNDEFINED, empty player
+     * lists) so displays clear themselves between tournaments.
+     */
+    default void publishIdle() {
+    }
 }

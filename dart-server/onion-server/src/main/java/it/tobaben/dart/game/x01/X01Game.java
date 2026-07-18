@@ -270,6 +270,14 @@ public class X01Game implements DartLikeGame {
             }
         } else {
             scores = this.scoreboard.getScores();
+            if (this.currentDartSet != null) {
+                try {
+                    // mid-turn: show the staged score so displays update per throw
+                    scores.put(this.currentPlayer, this.scoreboard.getCurrentScore());
+                } catch (InvalidStateException e) {
+                    // no open count: keep the committed score
+                }
+            }
         }
         int throwsLeft = this.currentDartSet == null
                 ? THROW_LIMIT_PER_ROUND

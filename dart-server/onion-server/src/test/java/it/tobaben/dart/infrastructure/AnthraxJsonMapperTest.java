@@ -101,8 +101,8 @@ class AnthraxJsonMapperTest {
         JsonObject currentPlayer = root.getAsJsonObject("currentPlayer");
         assertEquals("Alice", currentPlayer.get("name").getAsString());
         assertEquals(1, currentPlayer.get("dartboardId").getAsInt());
-        // staged turn: committed score still 301, two darts left
-        assertEquals(301, currentPlayer.get("punktestand").getAsInt());
+        // staged turn: the mid-turn score is published per throw, two darts left
+        assertEquals(241, currentPlayer.get("punktestand").getAsInt());
         assertEquals(2, currentPlayer.get("freieWuerfe").getAsInt());
         assertEquals(1, currentPlayer.getAsJsonObject("statistik").get("anzWuerfeSpiel").getAsInt());
         assertEquals(1, currentPlayer.getAsJsonObject("statistik").get("anzTripleFeld").getAsInt());

@@ -5,7 +5,7 @@ plugins {
 
 group 'it.tobaben.dart'
 description 'Dart Server'
-version '1.0'
+version '2.0'
 
 repositories {
     mavenCentral()
@@ -24,6 +24,8 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok:1.18.34'
 
     implementation 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5'
+    // SimpleJavaBLE (Bluetooth-Dartboards), vendored: not on Maven Central, see libs/README.md
+    implementation fileTree(dir: 'libs', include: '*.jar')
     implementation 'com.google.code.gson:gson:2.10.1'
     implementation 'commons-cli:commons-cli:1.9.0'
     // embedded MQTT broker (--embedded-broker)

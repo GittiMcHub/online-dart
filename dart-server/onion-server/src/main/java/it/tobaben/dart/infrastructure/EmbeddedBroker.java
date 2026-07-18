@@ -34,7 +34,9 @@ public final class EmbeddedBroker {
         }
     }
 
-    private final Server server = new Server();
+    // a Moquette Server cannot be started again after stopServer(), so the
+    // instance is created fresh on every start() (broker restart via web UI)
+    private Server server;
     private final MqttConfig mqtt;
     private final int websocketPort;
 
@@ -43,7 +45,11 @@ public final class EmbeddedBroker {
         this.websocketPort = websocketPort;
     }
 
-    public void start() throws IOException {
+    public synchronized void start() throws IOException {
+        if (this.server != null) {
+            return;
+        }
+        Server starting = new Server();
         Properties properties = new Properties();
         properties.setProperty(IConfig.HOST_PROPERTY_NAME, "0.0.0.0");
         properties.setProperty(IConfig.PORT_PROPERTY_NAME, String.valueOf(this.mqtt.port()));
@@ -53,12 +59,20 @@ public final class EmbeddedBroker {
         properties.setProperty(IConfig.PERSISTENCE_ENABLED_PROPERTY_NAME, "false");
         // no phoning home, and no data/.moquette_uuid file in the working dir
         properties.setProperty(IConfig.ENABLE_TELEMETRY_NAME, "false");
-        this.server.startServer(new MemoryConfig(properties), List.of(), null,
+        starting.startServer(new MemoryConfig(properties), List.of(), null,
                 singleUserAuthenticator(), null);
+        this.server = starting;
     }
 
-    public void stop() {
-        this.server.stopServer();
+    public synchronized void stop() {
+        if (this.server != null) {
+            this.server.stopServer();
+            this.server = null;
+        }
+    }
+
+    public synchronized boolean isRunning() {
+        return this.server != null;
     }
 
     private IAuthenticator singleUserAuthenticator() {

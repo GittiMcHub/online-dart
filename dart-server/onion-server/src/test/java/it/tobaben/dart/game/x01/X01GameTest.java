@@ -209,6 +209,35 @@ class X01GameTest {
     }
 
     @Test
+    void snapshotShouldShowStagedScoreDuringTurn() throws GameOverException, InvalidStateException {
+        X01Game game = default301();
+        Player player = new Player("Player1");
+        game.addPlayer(player);
+
+        // mid-turn: displays must see the score per throw, not only after commit
+        game.playTurn(Segment.TRIPLE_20);
+        assertEquals(241, game.getSnapshot().scores().get(player));
+        game.playTurn(Segment.SINGLE_20);
+        assertEquals(221, game.getSnapshot().scores().get(player));
+        game.playTurn(Segment.SINGLE_1);
+        assertEquals(220, game.getSnapshot().scores().get(player));
+    }
+
+    @Test
+    void snapshotShouldRestoreCommittedScoreAfterBust() throws GameOverException, InvalidStateException {
+        X01Game game = new X01Game(40, false, false);
+        Player player1 = new Player("Player1");
+        Player player2 = new Player("Player2");
+        game.addPlayer(player1);
+        game.addPlayer(player2);
+
+        game.playTurn(Segment.SINGLE_20);
+        assertEquals(20, game.getSnapshot().scores().get(player1));
+        game.playTurn(Segment.TRIPLE_20); // bust: turn is voided
+        assertEquals(40, game.getSnapshot().scores().get(player1));
+    }
+
+    @Test
     void currentPlayerShouldBeSetBeforeAndDuringGame() throws GameOverException, InvalidStateException {
         X01Game game = default301();
         Player player1 = new Player("Player1");
@@ -358,7 +387,7 @@ class X01GameTest {
         snapshot = game.getSnapshot();
         assertEquals(player1, snapshot.currentPlayer());
         assertEquals(List.of(player1, player2), snapshot.playerOrder());
-        assertEquals(301, snapshot.scores().get(player1)); // not committed yet
+        assertEquals(236, snapshot.scores().get(player1)); // staged mid-turn score
         assertEquals(1, snapshot.throwsLeftInTurn());
         assertEquals(5, snapshot.lastThrowScore());
         assertEquals(65, snapshot.turnScore());

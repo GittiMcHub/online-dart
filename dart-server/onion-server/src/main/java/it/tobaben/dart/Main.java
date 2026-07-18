@@ -1,71 +1,64 @@
 package it.tobaben.dart;
 
-import it.tobaben.dart.application.DartboardInput;
-import it.tobaben.dart.application.RegisteredPlayer;
-import it.tobaben.dart.application.TournamentEngine;
-import it.tobaben.dart.infrastructure.EmbeddedBroker;
-import it.tobaben.dart.infrastructure.MqttAdapter;
-import it.tobaben.dart.infrastructure.ServerConfig;
+import it.tobaben.dart.infrastructure.AppConfig;
+import it.tobaben.dart.infrastructure.AppContext;
+import it.tobaben.dart.infrastructure.AppSetup;
 import it.tobaben.dart.infrastructure.ServerSetup;
+import it.tobaben.dart.infrastructure.web.WebServer;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.CountDownLatch;
 
 /**
- * Composition root: CLI/conf/stdin setup -> MQTT adapter -> tournament engine.
+ * Composition root. Two paths:
+ * <ul>
+ *   <li>--player given: the original one-shot tournament run ({@link LegacyRun}),
+ *       exact same behavior as before</li>
+ *   <li>otherwise: long-lived web mode — management UI on --web-port (default
+ *       8420), broker/lobby/tournaments configured at runtime, any number of
+ *       tournaments without restart</li>
+ * </ul>
+ * Ends with System.exit: native (BLE) and broker threads are non-daemon and
+ * would keep the JVM alive otherwise.
  */
 public class Main {
 
     public static void main(String[] args) throws Exception {
-        Optional<ServerConfig> maybeConfig = ServerSetup.fromArgs(args, System.in, System.out);
-        if (maybeConfig.isEmpty()) {
-            return; // --help
-        }
-        ServerConfig config = maybeConfig.get();
-
-        EmbeddedBroker broker = null;
-        if (config.embeddedBroker()) {
-            broker = new EmbeddedBroker(config.mqtt(), config.embeddedBrokerWsPort());
-            broker.start();
-            System.out.println("[MAIN] Eingebetteter MQTT-Broker gestartet: TCP-Port "
-                    + config.mqtt().port() + ", WebSocket-Port " + config.embeddedBrokerWsPort()
-                    + ", Benutzer " + config.mqtt().username());
+        Options options = ServerSetup.buildOptions();
+        CommandLine cmd = new DefaultParser().parse(options, args);
+        if (cmd.hasOption("help")) {
+            new HelpFormatter().printHelp("onion-server", options, true);
+            return;
         }
 
-        BlockingQueue<DartboardInput> inputQueue = new LinkedBlockingQueue<>();
-        MqttAdapter mqtt = new MqttAdapter(config.mqtt(), inputQueue);
-        mqtt.connect();
+        if (cmd.hasOption("player")) {
+            LegacyRun.run(args);
+            System.exit(0);
+        }
 
-        TournamentEngine tournament = new TournamentEngine(
-                inputQueue, config.players(), config.gameFactory(),
-                config.games(), config.penaltyCostCents(), config.houseRules(),
-                mqtt, mqtt);
+        AppConfig config = AppSetup.fromCommandLine(cmd);
+        AppContext context = new AppContext(config);
+        WebServer webServer = new WebServer(context);
+        webServer.start();
+        System.out.println("[MAIN] Modus " + config.mode() + " – Web-Interface: http://localhost:"
+                + config.webPort() + "/");
 
-        System.out.println("[MAIN] Turnier startet: " + config.games() + " Spiel(e), Modus "
-                + config.gameMode() + ", " + config.players().size() + " Spieler");
-        tournament.runTournament();
-
-        System.out.println("[MAIN] Turnier beendet! Ergebnisse:");
-        List<List<RegisteredPlayer>> results = tournament.getGameResults();
-        for (int i = 0; i < results.size(); i++) {
-            System.out.println("[MAIN] Spiel " + (i + 1) + ":");
-            List<RegisteredPlayer> ranking = results.get(i);
-            for (int place = 0; place < ranking.size(); place++) {
-                System.out.println("[MAIN]   Platz " + (place + 1) + ": " + ranking.get(place).getName());
+        if (config.autoBroker()) {
+            String error = context.configureBrokerFromConfig();
+            if (error != null) {
+                System.err.println("[MAIN] --auto-broker fehlgeschlagen: " + error);
             }
         }
-        for (RegisteredPlayer registered : config.players()) {
-            System.out.println("[MAIN] Statistik " + registered.getName()
-                    + ": Strafpunkte=" + registered.statistics().getAnzStrafpunkte()
-                    + " (" + registered.statistics().getAnzStrafpunkte() * config.penaltyCostCents() + " Cent)"
-                    + ", Avg Turnier=" + registered.statistics().getAvgTurnier()
-                    + ", Würfe Turnier=" + registered.statistics().getAnzWuerfeTurnier());
-        }
-        mqtt.disconnect();
-        if (broker != null) {
-            broker.stop();
-        }
+
+        CountDownLatch shutdown = new CountDownLatch(1);
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            System.out.println("[MAIN] Fahre herunter...");
+            webServer.stop();
+            context.shutdown();
+        }, "shutdown"));
+        shutdown.await(); // runs until Ctrl+C / SIGTERM
     }
 }
