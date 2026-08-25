@@ -30,3 +30,4 @@ dartBlueMqttConnector-v0.1.2.exe
 ### EXE starten mit Parameter
 ```
 dartBlueMqttConnector-v0.1.2.exe --mqttbrokerip 127.0.0.1 --mqttbrokerport 1883 --mqttuser dartboard --mqttpassword smartness --mqttqos 0 --dartboard_mac 84:C6:92:C2:7B:A7 --dartboard_uuid 0000ffe1-0000-1000-8000-00805f9b34fb --dartboard_id 1
+

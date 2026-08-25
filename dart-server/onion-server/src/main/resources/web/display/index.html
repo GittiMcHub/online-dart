@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dart-Client-WebApp</title>
+  <!-- lokal gebundelt, damit die Anzeige im LAN ohne Internet funktioniert -->
+  <link href="vendor/bootstrap.min.css" rel="stylesheet">
+  <script src="vendor/bootstrap.bundle.min.js"></script>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Kachel-Galerie (obere Hälfte): aktive Kachel doppelt so groß, mittig,
+       schiebt sich beim Spielerwechsel nach links */
+    #galleryViewport {
+      display: none;
+      overflow: hidden;
+      width: 100%;
+      padding: 2vh 0 3vh 0;
+    }
+
+    #galleryTrack {
+      display: flex;
+      align-items: center;
+      gap: 1.5vw;
+      width: max-content;
+      transition: transform 0.6s ease;
+      will-change: transform;
+    }
+
+    .tile {
+      width: 15vw;
+      height: 17vh;
+      background: #fff;
+      color: #000;
+      border: 0.15vw solid #000;
+      border-radius: 0.8vw;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      flex-shrink: 0;
+      overflow: hidden;
+      transition: width 0.4s ease, height 0.4s ease, background-color 0.4s ease, color 0.4s ease;
+    }
+
+    .tile .tile-name { font-size: 1.6vw; font-weight: bold; line-height: 1.2; }
+    .tile .tile-score { font-size: 3vw; font-weight: bold; line-height: 1.2; }
+    .tile .tile-detail { display: none; }
+
+    .tile.active {
+      width: 30vw;
+      height: 34vh;
+      background: #000;
+      color: #fff;
+    }
+
+    .tile.active .tile-name { font-size: 2.8vw; }
+    .tile.active .tile-score { font-size: 6vw; }
+    .tile.active .tile-detail {
+      display: block;
+      font-size: 1.8vw;
+      line-height: 1.4;
+    }
+
+    .tile.active .tile-boxes {
+      font-family: monospace;
+      letter-spacing: 0.2vw;
+    }
+
+    /* Spielzug beendet (WAITING): gelb mit schwarzer Schrift */
+    .tile.active.waiting {
+      background: #ffc107;
+      color: #000;
+    }
+
+    /* Cricket: unter den Punkten grün die Zahlen, mit denen der Spieler
+       gerade punktet, darunter rot die, mit denen Gegner punkten */
+    .tile.active .tile-points span {
+      display: block;
+      line-height: 1.35;
+    }
+
+    .tile.active .cricket-own { color: #66bb6a; }
+    .tile.active .cricket-others { color: #ef5350; }
+    .tile.active.waiting .cricket-own { color: #1b5e20; }
+    .tile.active.waiting .cricket-others { color: #b71c1c; }
+
+    /* Cricket-Marks-Tabelle unter der Galerie, mittig, Ausrichtung umschaltbar */
+    #cricketBoard {
+      margin: 0 0 2vh 0;
+      text-align: center;
+    }
+
+    #cricketTable {
+      border-collapse: collapse;
+      margin: 0.8vh auto 0 auto;
+    }
+
+    #cricketTable th,
+    #cricketTable td {
+      border: 0.1vw solid #444;
+      padding: 0.4vh 1vw;
+      text-align: center;
+      font-size: 1.6vw;
+      min-width: 3.5vw;
+    }
+
+    #cricketTable td.closed { color: #999; }
+
+    #cricketTable th.active-player,
+    #cricketTable td.active-player {
+      background: #000;
+      color: #fff;
+    }
+  </style>
+</head>
+<!-- ################### BODY  ################### -->
+
+<body>
+  <div class="container">
+    <div id="app" class="App">
+      <div id="lobbyView" style="display: none;">
+        <h2 id="lobbyTitle"></h2>
+        <ul id="lobbyPlayers" style="font-size:1.5vw"></ul>
+      </div>
+      <p style="font-size:1vw" id="gameState"></p>
+
+      <!-- Kachel-Galerie: aktiver Spieler groß und mittig, wie eine echte digitale Dartscheibe -->
+      <div id="galleryViewport">
+        <div id="galleryTrack"></div>
+      </div>
+
+      <!-- Cricket: Marks-Tabelle (nur im Spielmodus Cricket sichtbar) -->
+      <div id="cricketBoard" style="display: none;">
+        <button id="cricketOrientationButton" class="btn btn-secondary btn-sm">⇄ Ausrichtung</button>
+        <table id="cricketTable"></table>
+      </div>
+
+      <!-- ################### BUTTONS ################### -->
+      <button id="nextButton" class="btn btn-primary btn-lg">NEXT</button>
+      <button id="randButton" class="btn btn-primary btn-lg">Rand-/Kein Treffer</button>
+      <button id="wandButton" class="btn btn-primary btn-lg">Wandtreffer $</button>
+      <button id="bouncedButton" class="btn btn-primary btn-lg">Reset/Bounced out</button>
+      <button id="statisticsButton" class="btn btn-primary btn-lg">Statistik ansehen</button>
+      <p></p>
+
+      <h0>Spieler Platzierung:</h0>
+      <ul id="spielerPlatzierung"></ul>
+      <!-- ################### Weitere Infos ################### -->
+      <h0>Übrige Informationen:</h0>
+      <p id="kostenStrafpunkte"></p>
+      <p id="spielId"></p>
+      <p id="anzahlSpiele"></p>
+    </div>
+
+    <!-- GIF-Animationen -->
+    <img src="img/bullseye.gif" id="bullgif" style="display: none;" />
+    <img src="img/randtreffer.gif" id="randgif" style="display: none;" />
+    <img src="img/strafe.gif" id="strafegif" style="display: none;" />
+    <img src="img/180.gif" id="maxPointsgif" style="display: none;" />
+    <img src="img/winner.gif" id="winnergif" style="display: none;" />
+    <img src="img/ueberworfen.gif" id="ueberworfengif" style="display: none;" />
+
+    <!-- ################### BUTTON Eventhandler ################### -->
+    <script>
+      // Eventlistener für den Button hinzufügen
+      document.getElementById('nextButton').addEventListener('click', () => {
+        // MQTT-Nachricht senden
+        mqttClient.publish(mqttTopic, '999', { qos: 2 }, (err) => {
+          if (err) {
+            console.error('Fehler beim Senden der Nachricht:', err);
+          } else {
+            console.log('Nachricht erfolgreich gesendet');
+          }
+        });
+      });
+      document.getElementById('statisticsButton').addEventListener('click', () => {
+        // Statistik Seite öffnen
+        window.open('statistics.html')
+      });
+      document.getElementById('randButton').addEventListener('click', () => {
+        // MQTT-Nachricht senden
+        mqttClient.publish(mqttTopic, '998', { qos: 2 }, (err) => {
+          if (err) {
+            console.error('Fehler beim Senden der Nachricht:', err);
+          } else {
+            console.log('Nachricht erfolgreich gesendet');
+          }
+          // GIF-Animation anzeigen
+          document.getElementById('randgif').style.display = 'block';
+          // Timeout zum Ausblenden der Animation nach 3 Sekunden
+          setTimeout(function () {
+            document.getElementById('randgif').style.display = 'none';
+          }, 3500);
+        });
+      });
+      document.getElementById('wandButton').addEventListener('click', () => {
+        // MQTT-Nachricht senden
+        mqttClient.publish(mqttTopic, '997', { qos: 2 }, (err) => {
+          if (err) {
+            console.error('Fehler beim Senden der Nachricht:', err);
+          } else {
+            console.log('Nachricht erfolgreich gesendet');
+          }
+        });
+      });
+      document.getElementById('bouncedButton').addEventListener('click', () => {
+        // MQTT-Nachricht senden
+        mqttClient.publish(mqttTopic, '996', { qos: 2 }, (err) => {
+          if (err) {
+            console.error('Fehler beim Senden der Nachricht:', err);
+          } else {
+            console.log('Nachricht erfolgreich gesendet');
+          }
+        });
+      });
+
+
+    </script>
+    <!-- ################### MQTT ################### -->
+    <script src="vendor/mqtt.min.js"></script>
+    <!-- Broker-Verbindungsdaten kommen zur Laufzeit vom Server -->
+    <script src="/config.js"></script>
+    <script>
+      const cfg = window.DART_CONFIG;
+      const mqttTopic = cfg.defaultDartboardTopic;
+      const brokerUrl = 'ws://' + cfg.wsHost + ':' + cfg.wsPort + '/';
+      const options = {
+        username: cfg.username,
+        password: cfg.password,
+        clientId: 'dart-display-' + Math.random().toString(16).slice(2, 8)
+      };
+
+      if (!cfg.configured) {
+        document.getElementById('gameState').innerText =
+          'Spiel Status: Broker noch nicht konfiguriert – bitte im Server-UI starten';
+      }
+      const mqttClient = mqtt.connect(brokerUrl, options);
+
+      mqttClient.on('connect', () => {
+        console.log('Connected to MQTT broker');
+        mqttClient.subscribe('status/gameUpdate', { qos: 2 });
+        mqttClient.subscribe('status/playSound', { qos: 2 });
+        mqttClient.subscribe('lobby/state', { qos: 1 });
+      });
+
+      // Lobby-Aufstellung anzeigen, solange kein Spiel läuft
+      function renderLobby(lobby) {
+        const view = document.getElementById('lobbyView');
+        if (lobby.phase !== 'LOBBY' || !lobby.players || lobby.players.length === 0) {
+          view.style.display = 'none';
+          return;
+        }
+        view.style.display = 'block';
+        document.getElementById('lobbyTitle').innerText =
+          'Lobby "' + (lobby.serverName || '') + '" – wartet auf Turnierstart';
+        const list = document.getElementById('lobbyPlayers');
+        list.innerHTML = '';
+        lobby.players.forEach(player => {
+          const li = document.createElement('li');
+          li.innerText = player.name + ' (Board ' + player.dartboardId + ')';
+          list.appendChild(li);
+        });
+      }
+
+      mqttClient.on('message', (topic, message) => {
+        console.log('Received message:', message.toString());
+        const data = JSON.parse(message.toString());
+
+        if (topic === 'lobby/state') {
+          renderLobby(data);
+          return;
+        }
+        if (topic === 'status/gameUpdate' && data.gameState === 'RUNNING') {
+          document.getElementById('lobbyView').style.display = 'none';
+        }
+
+        if (data && data.spielerPlatzierung) {
+          updateSpielerPlatzierung(data.spielerPlatzierung);
+        }
+        if (data && data.spielerReihenfolge) {
+          lastGameUpdate = data;
+          renderGallery(data);
+          renderCricket(data);
+        }
+        if (data && data.kostenStrafpunkte !== undefined) {
+          document.getElementById('kostenStrafpunkte').innerText = 'Kosten Strafpunkte: ' + data.kostenStrafpunkte + ' Cent';
+        }
+        if (data && data.anzahlSpiele !== undefined) {
+          document.getElementById('anzahlSpiele').innerText = 'Anzahl Spiele: ' + data.anzahlSpiele;
+        }
+        if (data && data.spielId !== undefined) {
+          document.getElementById('spielId').innerText = 'Spiel Nummer: ' + data.spielId;
+        }
+        if (data && data.gameState !== undefined) {
+          document.getElementById('gameState').innerText = 'Spiel Status: ' + data.gameState;
+          if (data.gameState === 'RUNNING') {
+            document.getElementById('nextButton').style.backgroundColor = 'blue'; // Ändern Sie die Hintergrundfarbe des Buttons
+          } else if (data.gameState === 'WAITING') {
+            document.getElementById('nextButton').style.backgroundColor = 'green'; // Zurücksetzen der Hintergrundfarbe
+          } else if (data.gameState === 'FINISHED') {
+            document.getElementById('nextButton').style.backgroundColor = 'orange'; // Zurücksetzen der Hintergrundfarbe
+          }
+        }
+
+        // ################### gameData speichern ###################
+        if (topic == 'status/gameUpdate') {
+          // Daten in Session Storage
+          const jsonData = JSON.stringify(data);
+          console.log(jsonData);
+          sessionStorage.setItem('gameData', jsonData);
+        }
+
+        // ################### SOUNDS ###################
+        if (topic === 'status/playSound') {
+          switch (data.sound) {
+            case 'WINNER':
+              // GIF-Animation anzeigen
+              document.getElementById('winnergif').style.display = 'block';
+              // Timeout zum Ausblenden der Animation nach 3 Sekunden
+              setTimeout(function () {
+                document.getElementById('winnergif').style.display = 'none';
+              }, 5500);
+              playSound('sounds/winner.wav');
+              break;
+            case 'TREFFER':
+              playSound('sounds/treffer.wav');
+              break;
+            case 'DOUBLE':
+              playSound('sounds/double.wav');
+              break;
+            case 'TRIPLE':
+              playSound('sounds/triple.wav');
+              break;
+            case 'BULLSEYE':
+              // GIF-Animation anzeigen
+              document.getElementById('bullgif').style.display = 'block';
+              // Timeout zum Ausblenden der Animation nach 3 Sekunden
+              setTimeout(function () {
+                document.getElementById('bullgif').style.display = 'none';
+              }, 3000);
+              playSound('sounds/bullseye.wav');
+              break;
+            case 'RESET':
+              playSound('sounds/reset.wav');
+              break;
+            case 'SPIELSTART':
+              playSound('sounds/spielstart.wav');
+              break;
+            case 'STRAFE':
+              // GIF-Animation anzeigen
+              document.getElementById('strafegif').style.display = 'block';
+              // Timeout zum Ausblenden der Animation nach 3 Sekunden
+              setTimeout(function () {
+                document.getElementById('strafegif').style.display = 'none';
+              }, 4500);
+              playSound('sounds/strafe.wav');
+              break;
+            case 'UEBERWORFEN':
+              // GIF-Animation anzeigen
+              document.getElementById('ueberworfengif').style.display = 'block';
+              // Timeout zum Ausblenden der Animation nach 3 Sekunden
+              setTimeout(function () {
+                document.getElementById('ueberworfengif').style.display = 'none';
+              }, 2700);
+              playSound('sounds/ueberworfen.wav');
+              break;
+            case 'MAXPOINTS':
+              // GIF-Animation anzeigen
+              document.getElementById('maxPointsgif').style.display = 'block';
+              // Timeout zum Ausblenden der Animation nach 3 Sekunden
+              setTimeout(function () {
+                document.getElementById('maxPointsgif').style.display = 'none';
+              }, 4500);
+              playSound('sounds/180.wav');
+            // Fügen Sie weitere Fälle hinzu, wenn erforderlich
+            default:
+              // Aktion für andere Nachrichten oder nichts tun
+              break;
+          }
+        }
+      });
+      // ################### Function SOUND ###################
+      function playSound(soundFile) {
+        const audio = new Audio(soundFile);
+        audio.play().then(function () {
+          console.log('Sound wird abgespielt.');
+        }).catch(function (error) {
+          console.log('Fehler beim Abspielen des Sounds:', error);
+        });
+      }
+      // ################### Function Anzeige Spieler und Platzierung ###################
+      function updateSpielerPlatzierung(spielerPlatzierung) {
+        const spielerPlatzierungList = document.getElementById('spielerPlatzierung');
+        spielerPlatzierungList.innerHTML = '';
+        spielerPlatzierung.forEach(spieler => {
+          const li = document.createElement('li');
+          li.innerText = 'Name: ' + spieler.name + ', Punktestand: ' + spieler.punktestand;
+          spielerPlatzierungList.appendChild(li);
+        });
+      }
+
+      // ################### Kachel-Galerie ###################
+      // Aktive Kachel: schwarz/weiß, doppelt so groß, mittig; Zeilen:
+      // Name / Punktestand / Letzter Wurf / Spielzugsumme + Wurf-Boxen.
+      // Spielzugende (WAITING): gelb/schwarz. Beim NEXT schiebt sich der
+      // Track nach links (CSS-Transition auf transform).
+      function renderGallery(data) {
+        const viewport = document.getElementById('galleryViewport');
+        const track = document.getElementById('galleryTrack');
+        const players = data.spielerReihenfolge;
+        const current = data.currentPlayer;
+
+        if (!players || players.length === 0 || data.gameState === 'UNDEFINED') {
+          viewport.style.display = 'none';
+          return;
+        }
+        viewport.style.display = 'block';
+
+        // Track nur neu aufbauen, wenn sich die Aufstellung ändert — sonst
+        // würde der Slide-Effekt bei jedem Update zerstört
+        const lineup = players.map(spieler => spieler.id).join(',');
+        if (track.dataset.lineup !== lineup) {
+          track.dataset.lineup = lineup;
+          track.innerHTML = '';
+          players.forEach(spieler => {
+            const tile = document.createElement('div');
+            tile.className = 'tile';
+            tile.id = 'tile-' + spieler.id;
+            tile.innerHTML =
+              '<div class="tile-name"></div>' +
+              '<div class="tile-score"></div>' +
+              '<div class="tile-detail tile-points"></div>' +
+              '<div class="tile-detail tile-lastthrow"></div>' +
+              '<div class="tile-detail tile-turn"></div>' +
+              '<div class="tile-detail tile-boxes"></div>';
+            track.appendChild(tile);
+          });
+        }
+
+        const cricket = data.gameMode === 'CRICKET';
+        players.forEach(spieler => {
+          const tile = document.getElementById('tile-' + spieler.id);
+          const active = spieler.id === current.id;
+          tile.classList.toggle('active', active);
+          tile.classList.toggle('waiting', active && data.gameState === 'WAITING');
+          tile.querySelector('.tile-name').innerText = spieler.name;
+          tile.querySelector('.tile-score').innerText = spieler.punktestand;
+          if (cricket && active) {
+            // unter den Punkten: grün die Zahlen, mit denen der Spieler gerade
+            // punkten kann, darunter rot die, mit denen Gegner punkten
+            const own = cricketScoringNumbers(data, players, spieler.name);
+            const others = cricketThreatNumbers(data, players, spieler.name);
+            tile.querySelector('.tile-points').innerHTML =
+              '<span class="cricket-own">' + (own.length ? own.join(' ') : '–') + '</span>' +
+              '<span class="cricket-others">' + (others.length ? others.join(' ') : '–') + '</span>';
+          } else {
+            tile.querySelector('.tile-points').innerHTML = '';
+          }
+          if (active) {
+            tile.querySelector('.tile-lastthrow').innerText = 'Wurf: ' + data.letzterWurf;
+            tile.querySelector('.tile-turn').innerText = 'Zug: ' + data.punkteSpielzug;
+            const frei = data.gameState === 'RUNNING' ? current.freieWuerfe : 0;
+            const geworfen = Math.min(3, Math.max(0, 3 - frei));
+            let boxes = '';
+            for (let i = 0; i < 3; i++) {
+              boxes += i < geworfen ? '[x]' : '[ ]';
+            }
+            tile.querySelector('.tile-boxes').innerText = boxes;
+          }
+        });
+
+        // aktive Kachel mittig ausrichten. Nicht per offsetLeft messen: die
+        // Größen-Transition läuft noch. Breiten entsprechen dem CSS:
+        // Kachel 15vw, Lücke 1.5vw, aktive Kachel 30vw.
+        const vw = window.innerWidth / 100;
+        const index = players.findIndex(spieler => spieler.id === current.id);
+        const offset = index * (15 + 1.5) * vw + 15 * vw; // linke Nachbarn + halbe aktive Breite
+        track.style.transform = 'translateX(' + (viewport.clientWidth / 2 - offset) + 'px)';
+      }
+      // ################### Cricket ###################
+      // modeData enthält "marks:<Spielername>:<Zahl>" = 0..3 (3 = zu).
+      const CRICKET_NUMBERS = [15, 16, 17, 18, 19, 20, 25];
+      let lastGameUpdate = null;
+      let cricketOrientation = localStorage.getItem('cricketOrientation') || 'horizontal';
+
+      function cricketLabel(number) {
+        return number === 25 ? 'Bull' : String(number);
+      }
+
+      function cricketMarks(data, name, number) {
+        return Number((data.modeData || {})['marks:' + name + ':' + number] || 0);
+      }
+
+      // Zahlen, mit denen dieser Spieler gerade Punkte erzielen kann:
+      // selbst zu, bei mindestens einem Gegner noch offen
+      function cricketScoringNumbers(data, players, name) {
+        return CRICKET_NUMBERS
+          .filter(number => cricketMarks(data, name, number) >= 3
+            && players.some(spieler =>
+              spieler.name !== name && cricketMarks(data, spieler.name, number) < 3))
+          .map(cricketLabel);
+      }
+
+      // Zahlen, mit denen Gegner gerade Punkte erzielen können, weil sie dort
+      // zu sind und der Spieler selbst noch offen ist — die sollte er schließen
+      function cricketThreatNumbers(data, players, name) {
+        return CRICKET_NUMBERS
+          .filter(number => cricketMarks(data, name, number) < 3
+            && players.some(spieler =>
+              spieler.name !== name && cricketMarks(data, spieler.name, number) >= 3))
+          .map(cricketLabel);
+      }
+
+      function escapeHtml(text) {
+        return String(text).replace(/[&<>"]/g, c =>
+          ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+      }
+
+      // Marks-Tabelle: horizontal = Spieler als Zeilen, vertikal = Spieler als Spalten
+      function renderCricket(data) {
+        const board = document.getElementById('cricketBoard');
+        const players = data.spielerReihenfolge;
+        if (data.gameMode !== 'CRICKET' || !players || players.length === 0
+            || data.gameState === 'UNDEFINED') {
+          board.style.display = 'none';
+          return;
+        }
+        board.style.display = 'block';
+
+        // tot = von allen Spielern zu; niemand kann dort mehr punkten
+        const deadNumbers = new Set(CRICKET_NUMBERS.filter(number =>
+          players.every(spieler => cricketMarks(data, spieler.name, number) >= 3)));
+        const cell = (name, number) => {
+          if (deadNumbers.has(number)) {
+            return { symbol: '/', closed: true };
+          }
+          const marks = Math.min(3, cricketMarks(data, name, number));
+          return { symbol: '⊗'.repeat(marks), closed: marks >= 3 };
+        };
+        const cls = (spieler, extra) => {
+          const classes = [];
+          if (extra) classes.push(extra);
+          if (spieler.id === data.currentPlayer.id) classes.push('active-player');
+          return classes.length ? ' class="' + classes.join(' ') + '"' : '';
+        };
+
+        let html = '';
+        if (cricketOrientation === 'horizontal') {
+          html += '<tr><th></th>'
+            + CRICKET_NUMBERS.map(number => '<th>' + cricketLabel(number) + '</th>').join('')
+            + '<th>Punkte</th></tr>';
+          players.forEach(spieler => {
+            html += '<tr><th' + cls(spieler) + '>' + escapeHtml(spieler.name) + '</th>'
+              + CRICKET_NUMBERS.map(number => {
+                const c = cell(spieler.name, number);
+                return '<td' + cls(spieler, c.closed ? 'closed' : '') + '>' + c.symbol + '</td>';
+              }).join('')
+              + '<td' + cls(spieler) + '>' + spieler.punktestand + '</td></tr>';
+          });
+        } else {
+          html += '<tr><th></th>'
+            + players.map(spieler => '<th' + cls(spieler) + '>' + escapeHtml(spieler.name) + '</th>').join('')
+            + '</tr>';
+          CRICKET_NUMBERS.forEach(number => {
+            html += '<tr><th>' + cricketLabel(number) + '</th>'
+              + players.map(spieler => {
+                const c = cell(spieler.name, number);
+                return '<td' + cls(spieler, c.closed ? 'closed' : '') + '>' + c.symbol + '</td>';
+              }).join('')
+              + '</tr>';
+          });
+          html += '<tr><th>Punkte</th>'
+            + players.map(spieler => '<td' + cls(spieler) + '>' + spieler.punktestand + '</td>').join('')
+            + '</tr>';
+        }
+        document.getElementById('cricketTable').innerHTML = html;
+      }
+
+      document.getElementById('cricketOrientationButton').addEventListener('click', () => {
+        cricketOrientation = cricketOrientation === 'horizontal' ? 'vertical' : 'horizontal';
+        localStorage.setItem('cricketOrientation', cricketOrientation);
+        if (lastGameUpdate) {
+          renderCricket(lastGameUpdate);
+        }
+      });
+
+      console.log('JavaScript wird ausgeführt!');
+    </script>
+
+</body>
+
+</html>

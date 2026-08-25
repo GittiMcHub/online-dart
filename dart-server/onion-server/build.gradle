@@ -1,24 +1,52 @@
 plugins {
     id 'java'
+    id 'application'
 }
 
 group 'it.tobaben.dart'
 description 'Dart Server'
-version '1.0-SNAPSHOT'
+version '2.1'
 
 repositories {
     mavenCentral()
 }
 
+application {
+    mainClass = 'it.tobaben.dart.Main'
+}
 
 test {
     useJUnitPlatform()
 }
 
 dependencies {
-    compileOnly 'org.projectlombok:lombok:1.18.26'
-    annotationProcessor 'org.projectlombok:lombok:1.18.26'
+    compileOnly 'org.projectlombok:lombok:1.18.34'
+    annotationProcessor 'org.projectlombok:lombok:1.18.34'
+
+    implementation 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5'
+    // SimpleJavaBLE (Bluetooth-Dartboards), vendored: not on Maven Central, see libs/README.md
+    implementation fileTree(dir: 'libs', include: '*.jar')
+    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'commons-cli:commons-cli:1.9.0'
+    // embedded MQTT broker (--embedded-broker)
+    implementation 'io.moquette:moquette-broker:0.17'
+    implementation 'org.slf4j:slf4j-simple:2.0.13'
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.1'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.1'
+}
+
+// self-contained jar like anthrax' jar-with-dependencies
+tasks.register('fatJar', Jar) {
+    archiveClassifier = 'all'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    manifest {
+        attributes 'Main-Class': 'it.tobaben.dart.Main'
+    }
+    from sourceSets.main.output
+    dependsOn configurations.runtimeClasspath
+    from {
+        configurations.runtimeClasspath.findAll { it.name.endsWith('jar') }.collect { zipTree(it) }
+    }
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
 }

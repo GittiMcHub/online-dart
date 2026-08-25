@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Online-Dart TV</title>
+  <link rel="stylesheet" href="tv.css">
+</head>
+
+<body>
+  <!-- Statuszeile oben: Broker / Boards / Phase -->
+  <header id="statusBar">
+    <span id="statusServer"></span>
+    <span id="statusBroker"></span>
+    <span id="statusBoards"></span>
+    <span id="statusPhase"></span>
+  </header>
+
+  <!-- ################### SCREENS ################### -->
+
+  <main id="screen-boot" class="screen">
+    <h1>Online-Dart</h1>
+    <div class="spinner" id="bootSpinner"></div>
+    <p id="bootMessage">Dart wird gestartet…</p>
+    <div id="bootRetryList" class="menu-list"></div>
+  </main>
+
+  <main id="screen-menu" class="screen" hidden>
+    <h1>Online-Dart</h1>
+    <div id="menuList" class="menu-list">
+      <button class="tv-item" data-menu="play">Spiel einrichten</button>
+      <button class="tv-item" data-menu="remote">Server beitreten (online)</button>
+      <button class="tv-item" data-menu="boards">Dartboards verbinden</button>
+      <button class="tv-item" data-menu="display">Nur Anzeige (laufendes Spiel)</button>
+      <button class="tv-item" data-menu="quit">Beenden</button>
+    </div>
+  </main>
+
+  <main id="screen-boards" class="screen" hidden>
+    <h1>Dartboards</h1>
+    <div id="boardsList" class="menu-list"></div>
+    <p id="boardsHint" class="hint"></p>
+  </main>
+
+  <main id="screen-remote" class="screen" hidden>
+    <h1>Server beitreten</h1>
+    <section class="lobby-columns">
+      <div>
+        <h2>Verbindung</h2>
+        <div id="remoteConfig" class="menu-list"></div>
+      </div>
+      <div>
+        <h2>Mitspielen</h2>
+        <div id="remoteJoin" class="menu-list"></div>
+      </div>
+    </section>
+    <p id="remoteHint" class="hint"></p>
+  </main>
+
+  <main id="screen-lobby" class="screen" hidden>
+    <h1>Lobby</h1>
+    <section class="lobby-columns">
+      <div>
+        <h2>Spieler</h2>
+        <div id="lobbyPlayers" class="menu-list"></div>
+      </div>
+      <div>
+        <h2>Hinzufügen</h2>
+        <div id="lobbyAdd" class="menu-list"></div>
+      </div>
+    </section>
+  </main>
+
+  <main id="screen-settings" class="screen" hidden>
+    <h1>Spieleinstellungen</h1>
+    <div id="settingsList" class="menu-list"></div>
+  </main>
+
+  <main id="screen-game" class="screen game-screen" hidden>
+    <div id="gameLobbyWait" hidden>
+      <h1 id="gameLobbyTitle"></h1>
+      <ul id="gameLobbyPlayers"></ul>
+    </div>
+    <div id="gameArea" hidden>
+      <div id="gameMeta"></div>
+      <div id="galleryViewport">
+        <div id="galleryTrack"></div>
+      </div>
+      <div id="cricketBoard" hidden>
+        <table id="cricketTable"></table>
+      </div>
+      <div id="gamePlacement"></div>
+    </div>
+    <!-- Aktionsleiste: fokussierbar/klickbar, damit das Spiel auch mit
+         Maus/Tastatur-emulierten Controllern bedienbar bleibt -->
+    <div id="gameButtons" class="game-buttons">
+      <button class="tv-item" data-focus-id="g-next" data-game="next">Weiter (NEXT)</button>
+      <button class="tv-item" data-focus-id="g-miss" data-game="miss">Daneben</button>
+      <button class="tv-item" data-focus-id="g-wall" data-game="wall">Wandtreffer</button>
+      <button class="tv-item" data-focus-id="g-menu" data-game="menu">Spielmenü</button>
+    </div>
+  </main>
+
+  <main id="screen-results" class="screen" hidden>
+    <h1>Ergebnis</h1>
+    <div id="resultsRanking"></div>
+    <div id="resultsList" class="menu-list"></div>
+  </main>
+
+  <!-- ################### OVERLAYS ################### -->
+
+  <!-- Bestätigungen + Spielmenü (Start-Taste) -->
+  <div id="modal" class="overlay" hidden>
+    <div class="overlay-box">
+      <p id="modalText"></p>
+      <div id="modalButtons" class="menu-list"></div>
+    </div>
+  </div>
+
+  <!-- Bildschirmtastatur für Spielernamen -->
+  <div id="osk" class="overlay" hidden>
+    <div class="overlay-box">
+      <p id="oskTitle"></p>
+      <p id="oskValue" class="osk-value"></p>
+      <div id="oskGrid"></div>
+      <p class="hint">Ⓐ Taste wählen &nbsp; Ⓑ/✗ Abbrechen &nbsp; Ⓧ/⌫ Löschen &nbsp; Ⓨ/✓ Fertig &nbsp; (Tastatur: direkt tippen, Enter = Fertig)</p>
+    </div>
+  </div>
+
+  <div id="toast" hidden></div>
+
+  <!-- GIF-Animationen (Assets der Display-Seite wiederverwendet) -->
+  <img src="/display/img/bullseye.gif" id="bullgif" class="event-gif" hidden />
+  <img src="/display/img/randtreffer.gif" id="randgif" class="event-gif" hidden />
+  <img src="/display/img/strafe.gif" id="strafegif" class="event-gif" hidden />
+  <img src="/display/img/180.gif" id="maxPointsgif" class="event-gif" hidden />
+  <img src="/display/img/winner.gif" id="winnergif" class="event-gif" hidden />
+  <img src="/display/img/ueberworfen.gif" id="ueberworfengif" class="event-gif" hidden />
+
+  <!-- Button-Legende unten -->
+  <footer id="legend"></footer>
+
+  <script src="/display/vendor/mqtt.min.js"></script>
+  <script src="/config.js"></script>
+  <script src="js/input.js"></script>
+  <script src="js/focus.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/osk.js"></script>
+  <script src="js/app.js"></script>
+</body>
+
+</html>

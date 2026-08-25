@@ -111,3 +111,7 @@ venv.bak/
 
 #BehilfsDatei für MAC Adresse Dartboard
 findDevices.log
+
+# SteamOS-App (Electron): Abhängigkeiten und gebündelte Laufzeit
+node_modules/
+dart-steamos/resources/

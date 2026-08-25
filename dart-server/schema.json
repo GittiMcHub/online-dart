@@ -1,225 +1,104 @@
-
-
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "status/gameUpdate Nachricht der Dart-Server (anthrax + onion). Basisfelder sind X01; gameMode/modeData sind optionale Erweiterungen des onion-servers (fehlen sie, gilt X01 wie bei anthrax).",
   "type": "object",
-  "properties": {
-    "spielerPlatzierung": {
-      "type": "array",
-      "items": {}
-    },
-    "spielerReihenfolge": {
-      "type": "array",
-      "items": [
-        {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "integer"
-            },
-            "dartboardId": {
-              "type": "integer"
-            },
-            "name": {
-              "type": "string"
-            },
-            "punktestand": {
-              "type": "integer"
-            },
-            "freieWuerfe": {
-              "type": "integer"
-            },
-            "statistik": {
-              "type": "object",
-              "properties": {
-                "anzWuerfeSpiel": {
-                  "type": "integer"
-                },
-                "anzWuerfeTurnier": {
-                  "type": "integer"
-                },
-                "summeSpiel": {
-                  "type": "integer"
-                },
-                "summeTurnier": {
-                  "type": "integer"
-                },
-                "anzMinWuerfeBisSpielende": {
-                  "type": "integer"
-                },
-                "maxPunkteProSpielzug": {
-                  "type": "integer"
-                },
-                "avgSpiel": {
-                  "type": "number"
-                },
-                "avgTurnier": {
-                  "type": "number"
-                },
-                "anzStrafpunkte": {
-                  "type": "integer"
-                },
-                "anzRandTreffer": {
-                  "type": "integer"
-                },
-                "anzWandTreffer": {
-                  "type": "integer"
-                },
-                "anzBull": {
-                  "type": "integer"
-                },
-                "anzBullseye": {
-                  "type": "integer"
-                },
-                "anzEinerFeld": {
-                  "type": "integer"
-                },
-                "anzDoubleFeld": {
-                  "type": "integer"
-                },
-                "anzTripleFeld": {
-                  "type": "integer"
-                },
-                "anzUeberworfen": {
-                  "type": "integer"
-                }
-              },
-              "required": [
-                "anzWuerfeSpiel",
-                "anzWuerfeTurnier",
-                "summeSpiel",
-                "summeTurnier",
-                "anzMinWuerfeBisSpielende",
-                "maxPunkteProSpielzug",
-                "avgSpiel",
-                "avgTurnier",
-                "anzStrafpunkte",
-                "anzRandTreffer",
-                "anzWandTreffer",
-                "anzBull",
-                "anzBullseye",
-                "anzEinerFeld",
-                "anzDoubleFeld",
-                "anzTripleFeld",
-                "anzUeberworfen"
-              ]
-            }
-          },
-          "required": [
-            "id",
-            "dartboardId",
-            "name",
-            "punktestand",
-            "freieWuerfe",
-            "statistik"
-          ]
+  "definitions": {
+    "statistik": {
+      "type": "object",
+      "properties": {
+        "anzWuerfeSpiel": {
+          "type": "integer"
         },
-        {
-          "type": "object",
-          "properties": {
-            "id": {
+        "anzWuerfeTurnier": {
+          "type": "integer"
+        },
+        "summeSpiel": {
+          "type": "integer"
+        },
+        "summeTurnier": {
+          "type": "integer"
+        },
+        "anzMinWuerfeBisSpielende": {
+          "type": "integer",
+          "description": "999 solange noch kein Spiel beendet wurde"
+        },
+        "maxPunkteProSpielzug": {
+          "type": "integer"
+        },
+        "avgSpiel": {
+          "type": "number",
+          "description": "3-Dart-Average im laufenden Spiel"
+        },
+        "avgTurnier": {
+          "type": "number"
+        },
+        "anzStrafpunkte": {
+          "type": "integer"
+        },
+        "anzRandTreffer": {
+          "type": "integer"
+        },
+        "anzWandTreffer": {
+          "type": "integer"
+        },
+        "anzBull": {
+          "type": "integer"
+        },
+        "anzBullseye": {
+          "type": "integer"
+        },
+        "anzEinerFeld": {
+          "type": "integer"
+        },
+        "anzDoubleFeld": {
+          "type": "integer"
+        },
+        "anzTripleFeld": {
+          "type": "integer"
+        },
+        "anzUeberworfen": {
+          "type": "integer"
+        },
+        "highestFinish": {
+          "type": "integer",
+          "description": "optional: hoechster Spielzug, der ein Spiel beendet hat"
+        },
+        "getroffeneFelder": {
+          "type": "array",
+          "description": "optional: Trefferzaehler [multiplikator-1][feld], feld-Index 0-19 = Felder 1-20, Index 20 = Bull",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "type": "array",
+            "minItems": 21,
+            "maxItems": 21,
+            "items": {
               "type": "integer"
-            },
-            "dartboardId": {
-              "type": "integer"
-            },
-            "name": {
-              "type": "string"
-            },
-            "punktestand": {
-              "type": "integer"
-            },
-            "freieWuerfe": {
-              "type": "integer"
-            },
-            "statistik": {
-              "type": "object",
-              "properties": {
-                "anzWuerfeSpiel": {
-                  "type": "integer"
-                },
-                "anzWuerfeTurnier": {
-                  "type": "integer"
-                },
-                "summeSpiel": {
-                  "type": "integer"
-                },
-                "summeTurnier": {
-                  "type": "integer"
-                },
-                "anzMinWuerfeBisSpielende": {
-                  "type": "integer"
-                },
-                "maxPunkteProSpielzug": {
-                  "type": "integer"
-                },
-                "avgSpiel": {
-                  "type": "number"
-                },
-                "avgTurnier": {
-                  "type": "number"
-                },
-                "anzStrafpunkte": {
-                  "type": "integer"
-                },
-                "anzRandTreffer": {
-                  "type": "integer"
-                },
-                "anzWandTreffer": {
-                  "type": "integer"
-                },
-                "anzBull": {
-                  "type": "integer"
-                },
-                "anzBullseye": {
-                  "type": "integer"
-                },
-                "anzEinerFeld": {
-                  "type": "integer"
-                },
-                "anzDoubleFeld": {
-                  "type": "integer"
-                },
-                "anzTripleFeld": {
-                  "type": "integer"
-                },
-                "anzUeberworfen": {
-                  "type": "integer"
-                }
-              },
-              "required": [
-                "anzWuerfeSpiel",
-                "anzWuerfeTurnier",
-                "summeSpiel",
-                "summeTurnier",
-                "anzMinWuerfeBisSpielende",
-                "maxPunkteProSpielzug",
-                "avgSpiel",
-                "avgTurnier",
-                "anzStrafpunkte",
-                "anzRandTreffer",
-                "anzWandTreffer",
-                "anzBull",
-                "anzBullseye",
-                "anzEinerFeld",
-                "anzDoubleFeld",
-                "anzTripleFeld",
-                "anzUeberworfen"
-              ]
             }
-          },
-          "required": [
-            "id",
-            "dartboardId",
-            "name",
-            "punktestand",
-            "freieWuerfe",
-            "statistik"
-          ]
+          }
         }
+      },
+      "required": [
+        "anzWuerfeSpiel",
+        "anzWuerfeTurnier",
+        "summeSpiel",
+        "summeTurnier",
+        "anzMinWuerfeBisSpielende",
+        "maxPunkteProSpielzug",
+        "avgSpiel",
+        "avgTurnier",
+        "anzStrafpunkte",
+        "anzRandTreffer",
+        "anzWandTreffer",
+        "anzBull",
+        "anzBullseye",
+        "anzEinerFeld",
+        "anzDoubleFeld",
+        "anzTripleFeld",
+        "anzUeberworfen"
       ]
     },
-    "currentPlayer": {
+    "spieler": {
       "type": "object",
       "properties": {
         "id": {
@@ -232,85 +111,15 @@
           "type": "string"
         },
         "punktestand": {
-          "type": "integer"
+          "type": "integer",
+          "description": "X01: Restpunkte (Countdown); Cricket: erzielte Punkte"
         },
         "freieWuerfe": {
-          "type": "integer"
+          "type": "integer",
+          "description": "verbleibende Darts im aktuellen Spielzug (nur beim Spieler am Zug > 0)"
         },
         "statistik": {
-          "type": "object",
-          "properties": {
-            "anzWuerfeSpiel": {
-              "type": "integer"
-            },
-            "anzWuerfeTurnier": {
-              "type": "integer"
-            },
-            "summeSpiel": {
-              "type": "integer"
-            },
-            "summeTurnier": {
-              "type": "integer"
-            },
-            "anzMinWuerfeBisSpielende": {
-              "type": "integer"
-            },
-            "maxPunkteProSpielzug": {
-              "type": "integer"
-            },
-            "avgSpiel": {
-              "type": "number"
-            },
-            "avgTurnier": {
-              "type": "number"
-            },
-            "anzStrafpunkte": {
-              "type": "integer"
-            },
-            "anzRandTreffer": {
-              "type": "integer"
-            },
-            "anzWandTreffer": {
-              "type": "integer"
-            },
-            "anzBull": {
-              "type": "integer"
-            },
-            "anzBullseye": {
-              "type": "integer"
-            },
-            "anzEinerFeld": {
-              "type": "integer"
-            },
-            "anzDoubleFeld": {
-              "type": "integer"
-            },
-            "anzTripleFeld": {
-              "type": "integer"
-            },
-            "anzUeberworfen": {
-              "type": "integer"
-            }
-          },
-          "required": [
-            "anzWuerfeSpiel",
-            "anzWuerfeTurnier",
-            "summeSpiel",
-            "summeTurnier",
-            "anzMinWuerfeBisSpielende",
-            "maxPunkteProSpielzug",
-            "avgSpiel",
-            "avgTurnier",
-            "anzStrafpunkte",
-            "anzRandTreffer",
-            "anzWandTreffer",
-            "anzBull",
-            "anzBullseye",
-            "anzEinerFeld",
-            "anzDoubleFeld",
-            "anzTripleFeld",
-            "anzUeberworfen"
-          ]
+          "$ref": "#/definitions/statistik"
         }
       },
       "required": [
@@ -321,15 +130,35 @@
         "freieWuerfe",
         "statistik"
       ]
+    }
+  },
+  "properties": {
+    "spielerPlatzierung": {
+      "type": "array",
+      "description": "fertige Spieler in Zielreihenfolge; leer solange niemand fertig ist",
+      "items": {
+        "$ref": "#/definitions/spieler"
+      }
+    },
+    "spielerReihenfolge": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/spieler"
+      }
+    },
+    "currentPlayer": {
+      "$ref": "#/definitions/spieler"
     },
     "kostenStrafpunkte": {
-      "type": "integer"
+      "type": "integer",
+      "description": "Kosten pro Strafpunkt in Cent"
     },
     "anzahlSpiele": {
       "type": "integer"
     },
     "spielId": {
-      "type": "integer"
+      "type": "integer",
+      "description": "laufendes Spiel, 1-basiert"
     },
     "punkteSpielzug": {
       "type": "integer"
@@ -338,7 +167,24 @@
       "type": "integer"
     },
     "gameState": {
-      "type": "string"
+      "type": "string",
+      "enum": [
+        "UNDEFINED",
+        "RUNNING",
+        "WAITING",
+        "FINISHED"
+      ]
+    },
+    "gameMode": {
+      "type": "string",
+      "description": "optional (onion-server): Spielmodus, z.B. X01 oder CRICKET; fehlt das Feld, gilt X01"
+    },
+    "modeData": {
+      "type": "object",
+      "description": "optional (onion-server): modusspezifische Zusatzdaten als String-Map. Cricket: marks:<Spielername>:<Feld 15-20|25> = Anzahl Marks 0-3",
+      "additionalProperties": {
+        "type": "string"
+      }
     }
   },
   "required": [

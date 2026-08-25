@@ -46,6 +46,10 @@ public class DartSet {
         return this.busted ? 0 : this.dartThrows.stream().map(Throw::getScore).reduce(0, Integer::sum);
     }
 
+    public int getThrowCount(){
+        return this.dartThrows.size();
+    }
+
     @Override
     public String toString(){
         return this.player.getName() + " // " + this.getScore() + (this.busted ? " > BUST <" : "");

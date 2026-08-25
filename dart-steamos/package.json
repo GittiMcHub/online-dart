@@ -1,0 +1,38 @@
+{
+  "name": "online-dart-steamos",
+  "version": "2.0.0",
+  "description": "Online-Dart als Non-Steam-Game: Electron-Hülle um den onion-server mit Controller-TV-UI (/tv/)",
+  "main": "main.js",
+  "author": "GittiMcHub",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "prepare-runtime": "scripts/build-runtime.sh",
+    "dist": "npm run prepare-runtime && electron-builder --linux AppImage"
+  },
+  "devDependencies": {
+    "electron": "36.9.5",
+    "electron-builder": "24.13.3"
+  },
+  "build": {
+    "appId": "it.tobaben.dart",
+    "productName": "OnlineDart",
+    "files": [
+      "main.js",
+      "preload.js"
+    ],
+    "extraResources": [
+      {
+        "from": "resources",
+        "to": "app-runtime"
+      }
+    ],
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Game",
+      "icon": "icon.png"
+    }
+  }
+}
