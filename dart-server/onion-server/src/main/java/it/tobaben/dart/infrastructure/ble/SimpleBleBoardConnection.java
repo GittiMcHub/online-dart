@@ -29,6 +29,11 @@ public class SimpleBleBoardConnection implements DartboardConnectionPort {
     private volatile boolean closed;
     private volatile Peripheral peripheral;
     private volatile long lastNotificationMillis;
+    /* SimpleJavaBLE hält den Notify-Callback nativ nur als JNI-WeakRef und
+       verwirft Treffer stumm, sobald der GC das Lambda eingesammelt hat
+       (Board wirkt nach ~2 min "taub", obwohl die Verbindung steht). Dieses
+       Feld hält den Callback stark referenziert, solange die Verbindung lebt. */
+    private volatile Peripheral.DataCallback notifyCallback;
     private Thread worker;
 
     public SimpleBleBoardConnection(String mac) {
@@ -54,13 +59,14 @@ public class SimpleBleBoardConnection implements DartboardConnectionPort {
                 }
                 found.connect();
                 this.peripheral = found;
+                this.notifyCallback = data -> {
+                    this.lastNotificationMillis = System.currentTimeMillis();
+                    String wireCode = BoardHexCodec.toWireCode(data);
+                    System.out.println("[BLE] " + this.mac + " Treffer → " + wireCode);
+                    onWireCode.accept(wireCode);
+                };
                 found.notify(new BluetoothUUID(SERVICE_UUID), new BluetoothUUID(NOTIFY_UUID),
-                        data -> {
-                            this.lastNotificationMillis = System.currentTimeMillis();
-                            String wireCode = BoardHexCodec.toWireCode(data);
-                            System.out.println("[BLE] " + this.mac + " Treffer → " + wireCode);
-                            onWireCode.accept(wireCode);
-                        });
+                        this.notifyCallback);
                 onStatus.accept(BoardStatus.CONNECTED);
                 this.lastNotificationMillis = System.currentTimeMillis();
                 while (!this.closed && found.isConnected()) {
