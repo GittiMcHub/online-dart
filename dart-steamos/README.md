@@ -12,7 +12,7 @@ muss nichts installiert werden, auch kein Java.
 
 Voraussetzungen (nur auf dem Build-Rechner, Linux x64):
 
-- JDK 17+ (inkl. `jdeps`/`jlink`)
+- JDK 21+ (inkl. `jdeps`/`jlink`; das gebündelte JRE wird daraus erzeugt)
 - Node.js 18+ und npm
 
 ```bash

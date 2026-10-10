@@ -11,7 +11,7 @@ Dartboards (SimpleJavaBLE) — oder klassisch als One-Shot-Server per CLI.
 
 ## Schnellstart
 
-Voraussetzung: Java 17+.
+Voraussetzung: Java 21+ (das vendorte SimpleJavaBLE-Jar in `libs/` ist für Java 21 gebaut).
 
 ```bash
 ./gradlew fatJar

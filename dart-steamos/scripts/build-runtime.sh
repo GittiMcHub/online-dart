@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Baut die gebündelte Laufzeit für das AppImage:
 #   1. Fat-Jar des onion-servers besorgen (Quelle s.u.)
-#   2. minimales JRE per jdeps/jlink (JDK 17, linux-x64 — jlink erzeugt eine
+#   2. minimales JRE per jdeps/jlink (JDK 21, linux-x64 — jlink erzeugt eine
 #      plattform-native Laufzeit, daher muss auf Linux gebaut werden)
 # Ergebnis landet in resources/ (gitignored), electron-builder packt es als
 # extraResources ins AppImage.
@@ -56,7 +56,7 @@ echo "==> Benötigte Java-Module ermitteln (jdeps + Festliste)"
 #   java.logging/java.naming/java.management — SLF4J/Netty/Moquette
 #   java.desktop/java.sql — Gson-Typadapter, SimpleJavaBLE
 EXTRA_MODULES="jdk.httpserver,jdk.unsupported,jdk.crypto.ec,java.logging,java.naming,java.management,java.desktop,java.sql"
-MODULES="$(jdeps --multi-release 17 --print-module-deps --ignore-missing-deps \
+MODULES="$(jdeps --multi-release 21 --print-module-deps --ignore-missing-deps \
     "$TARGET" 2>/dev/null || echo java.base)"
 MODULES="$MODULES,$EXTRA_MODULES"
 echo "    Module: $MODULES"
