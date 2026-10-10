@@ -4,6 +4,8 @@
 #   Merge master → GitHub-Release onion-server-v<version> mit dem Jar,
 #                  danach ein SteamOS-AppImage mit diesem Server als "-latest"-Artefakt,
 #                  falls dart-steamos noch eine ältere Version pinnt
+#   Manuell     → workflow_dispatch auf master: Release nachholen (z.B. nach abgebrochenem Lauf),
+#                  übersprungen, wenn das Release-Tag schon existiert
 name: onion-server
 
 on:
@@ -18,6 +20,7 @@ on:
     paths:
       - 'dart-server/onion-server/**'
       - '!dart-server/onion-server/**/*.md'
+  workflow_dispatch:
 
 concurrency:
   # PR-Nummer statt ref: Läufe zu bereits gemergten PRs bekommen ref=master und
@@ -91,7 +94,7 @@ jobs:
 
   release:
     needs: build
-    if: github.event_name == 'push'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-24.04
     permissions:
       contents: write
