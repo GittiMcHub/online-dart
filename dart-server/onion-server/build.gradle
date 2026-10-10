@@ -5,7 +5,10 @@ plugins {
 
 group 'it.tobaben.dart'
 description 'Dart Server'
-version '2.1'
+// Basisversion: bei jeder Änderung am Server erhöhen (CI lehnt PRs ab, deren
+// Version schon als Release-Tag onion-server-v<version> existiert).
+// PR-Builds hängen -PversionSuffix=-pr<N>.<run> an, siehe .github/workflows/
+version = '2.1' + (findProperty('versionSuffix') ?: '')
 
 repositories {
     mavenCentral()
@@ -41,7 +44,9 @@ tasks.register('fatJar', Jar) {
     archiveClassifier = 'all'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest {
-        attributes 'Main-Class': 'it.tobaben.dart.Main'
+        attributes 'Main-Class': 'it.tobaben.dart.Main',
+                   'Implementation-Title': 'onion-server',
+                   'Implementation-Version': project.version
     }
     from sourceSets.main.output
     dependsOn configurations.runtimeClasspath

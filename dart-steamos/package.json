@@ -1,6 +1,7 @@
 {
   "name": "online-dart-steamos",
   "version": "2.0.0",
+  "onionServerVersion": "2.1",
   "description": "Online-Dart als Non-Steam-Game: Electron-Hülle um den onion-server mit Controller-TV-UI (/tv/)",
   "main": "main.js",
   "author": "GittiMcHub",
@@ -8,7 +9,8 @@
   "scripts": {
     "start": "electron .",
     "prepare-runtime": "scripts/build-runtime.sh",
-    "dist": "npm run prepare-runtime && electron-builder --linux AppImage"
+    "dist": "npm run prepare-runtime && electron-builder --linux AppImage",
+    "dist:local": "npm run prepare-runtime -- --from-source && electron-builder --linux AppImage"
   },
   "devDependencies": {
     "electron": "36.9.5",
