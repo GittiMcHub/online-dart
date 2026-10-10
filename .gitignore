@@ -115,3 +115,8 @@ findDevices.log
 # SteamOS-App (Electron): Abhängigkeiten und gebündelte Laufzeit
 node_modules/
 dart-steamos/resources/
+# Signatur-Keystores (Android-Connector) nie committen
+*.jks
+*.p12
+*.keystore
+keystore.b64
