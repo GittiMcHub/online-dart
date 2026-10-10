@@ -38,12 +38,12 @@ env:
 jobs:
   plan:
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       app-version: ${{ steps.plan.outputs.app-version }}
       matrix: ${{ steps.plan.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -93,17 +93,17 @@ jobs:
 
   pr-build:
     needs: plan
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
         include: ${{ fromJSON(needs.plan.outputs.matrix) }}
     name: AppImage (${{ matrix.variant }}, server ${{ matrix.server }})
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - if: matrix.variant == 'pr'
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '21'
@@ -128,7 +128,7 @@ jobs:
           app-version: ${{ needs.plan.outputs.app-version }}
           file-name: ${{ matrix.file }}
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.file }}
           path: ${{ steps.appimage.outputs.path }}
@@ -137,11 +137,11 @@ jobs:
 
   release:
     if: github.event_name == 'push'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - id: version
         name: Version prüfen
