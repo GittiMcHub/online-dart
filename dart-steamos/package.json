@@ -19,6 +19,7 @@
   "build": {
     "appId": "it.tobaben.dart",
     "productName": "OnlineDart",
+    "publish": null,
     "files": [
       "main.js",
       "preload.js"
