@@ -21,7 +21,9 @@ on:
       - '!dart-board-connector/dartAndroidMqttConnector/**/*.md'
 
 concurrency:
-  group: android-connector-${{ github.ref }}
+  # PR-Nummer statt ref: Läufe zu bereits gemergten PRs bekommen ref=master und
+  # würden sonst den Release-Lauf auf master abbrechen
+  group: android-connector-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
