@@ -3,6 +3,8 @@
 #                  android-connector-v<version> schon existiert (appVersion erhöhen!)
 #   Merge master → Release-APK bauen, signieren und als GitHub-Release
 #                  android-connector-v<version> veröffentlichen
+#   Manuell     → workflow_dispatch auf master: Release nachholen (z.B. nach abgebrochenem Lauf),
+#                  übersprungen, wenn das Release-Tag schon existiert
 # Benötigte Secrets im Environment "release" (Release-Keystore, immer derselbe — sonst lassen sich
 # Updates nicht über eine installierte Version installieren):
 #   ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
@@ -19,6 +21,7 @@ on:
     paths:
       - 'dart-board-connector/dartAndroidMqttConnector/**'
       - '!dart-board-connector/dartAndroidMqttConnector/**/*.md'
+  workflow_dispatch:
 
 concurrency:
   # PR-Nummer statt ref: Läufe zu bereits gemergten PRs bekommen ref=master und
@@ -64,12 +67,12 @@ jobs:
           exit 1
 
       - name: Kein neues Release
-        if: github.event_name == 'push' && steps.version.outputs.tag-exists == 'true'
+        if: github.event_name != 'pull_request' && steps.version.outputs.tag-exists == 'true'
         run: echo "::warning::android-connector-v${{ steps.version.outputs.version }} existiert bereits — kein neues Release (Version nicht erhöht?)."
 
   release:
     needs: version
-    if: github.event_name == 'push' && needs.version.outputs.tag-exists == 'false'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master' && needs.version.outputs.tag-exists == 'false'
     runs-on: ubuntu-24.04
     # Secrets liegen im Environment "release" (nur für master freigegeben)
     environment: release

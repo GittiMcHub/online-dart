@@ -6,6 +6,8 @@
 #                  PR schlägt fehl, wenn dart-steamos geändert ist und steamos-v<version>
 #                  schon existiert, oder wenn der Pin auf kein (kommendes) Release zeigt
 #   Merge master → GitHub-Release steamos-v<version> mit dem gepinnten Server-Release
+#   Manuell     → workflow_dispatch auf master: Release nachholen (z.B. nach abgebrochenem Lauf),
+#                  übersprungen, wenn das Release-Tag schon existiert
 name: steamos
 
 on:
@@ -23,6 +25,7 @@ on:
     paths:
       - 'dart-steamos/**'
       - '!dart-steamos/**/*.md'
+  workflow_dispatch:
 
 concurrency:
   # PR-Nummer statt ref: Läufe zu bereits gemergten PRs bekommen ref=master und
@@ -138,7 +141,7 @@ jobs:
           retention-days: 7
 
   release:
-    if: github.event_name == 'push'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-24.04
     permissions:
       contents: write

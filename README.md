@@ -66,6 +66,8 @@ Entwickelt wird auf kurzlebigen Branches (`fix/…`, `feat/…`), die per Pull R
 
 Workflow-Artefakte (PR-Builds) liegen 7 Tage in der Actions-Ansicht des jeweiligen Laufs („Artifacts").
 
+Fehlt ein Release (z.B. weil ein Lauf abgebrochen wurde), lässt es sich manuell nachholen: Actions → Workflow wählen → „Run workflow" auf `master`, oder `gh workflow run android-connector.yml --ref master` (analog `onion-server.yml`, `steamos.yml`). Existiert das Release-Tag schon, passiert nichts.
+
 **Versionen** — jede Komponente hat ihre eigene und ihr eigenes Tag-Präfix:
 * onion-server: `version` in `dart-server/onion-server/build.gradle`. Ein PR, der den Server ändert, **muss die Version erhöhen** — der Build schlägt fehl, wenn `onion-server-v<version>` schon existiert.
 * dart-steamos: `version` in `dart-steamos/package.json`, gleiche Regel für `steamos-v<version>`. Zusätzlich pinnt `onionServerVersion` dort, welches Server-Release ins AppImage kommt. Der Pin wird **von Hand** erhöht; wann dabei welche steamos-Version fällig ist, steht in [dart-steamos/README.md](dart-steamos/README.md#versionen--releases).
