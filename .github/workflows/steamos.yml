@@ -25,7 +25,9 @@ on:
       - '!dart-steamos/**/*.md'
 
 concurrency:
-  group: steamos-${{ github.ref }}
+  # PR-Nummer statt ref: Läufe zu bereits gemergten PRs bekommen ref=master und
+  # würden sonst den Release-Lauf auf master abbrechen
+  group: steamos-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:

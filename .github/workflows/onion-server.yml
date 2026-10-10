@@ -20,7 +20,9 @@ on:
       - '!dart-server/onion-server/**/*.md'
 
 concurrency:
-  group: onion-server-${{ github.ref }}
+  # PR-Nummer statt ref: Läufe zu bereits gemergten PRs bekommen ref=master und
+  # würden sonst den Release-Lauf auf master abbrechen
+  group: onion-server-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
@@ -37,6 +39,8 @@ jobs:
       tag-exists: ${{ steps.version.outputs.tag-exists }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - id: version
         name: Version bestimmen
@@ -49,17 +53,22 @@ jobs:
             tag_exists=false
           fi
           suffix=""
+          server_changed=true
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             suffix="-pr${{ github.event.number }}.${{ github.run_number }}"
+            # nur Workflow geändert → keine Versionserhöhung nötig
+            changed="$(git diff --name-only "${{ github.event.pull_request.base.sha }}...HEAD" | grep -v '\.md$' || true)"
+            grep -q '^dart-server/onion-server/' <<<"$changed" || server_changed=false
           fi
           echo "base=$base"            >> "$GITHUB_OUTPUT"
           echo "suffix=$suffix"        >> "$GITHUB_OUTPUT"
           echo "version=$base$suffix"  >> "$GITHUB_OUTPUT"
           echo "tag-exists=$tag_exists" >> "$GITHUB_OUTPUT"
+          echo "server-changed=$server_changed" >> "$GITHUB_OUTPUT"
           echo "onion-server $base$suffix (Tag onion-server-v$base existiert: $tag_exists)"
 
       - name: Versionsprüfung
-        if: github.event_name == 'pull_request' && steps.version.outputs.tag-exists == 'true'
+        if: github.event_name == 'pull_request' && steps.version.outputs.server-changed == 'true' && steps.version.outputs.tag-exists == 'true'
         run: |
           echo "::error file=dart-server/onion-server/build.gradle::onion-server-v${{ steps.version.outputs.base }} ist bereits veröffentlicht — Version in build.gradle erhöhen."
           exit 1
