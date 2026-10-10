@@ -75,6 +75,8 @@ Workflow-Artefakte (PR-Builds) liegen 7 Tage in der Actions-Ansicht des jeweilig
 * sonst → ein AppImage mit dem gepinnten Server und, falls es schon ein neueres onion-server-Release gibt, zusätzlich eines mit diesem (`…+server.<neuste>-latest.AppImage`).
 * Nach jedem onion-server-Release auf `master` entsteht außerdem ein `-latest`-AppImage mit dem neuen Server, solange der Pin noch auf einer älteren Version steht.
 
+**Android-Connector** (`.github/workflows/android-connector.yml`) — gleiche Versionsregel, aber ohne PR-Builds: `appVersion` in `dart-board-connector/dartAndroidMqttConnector/app/build.gradle.kts` muss in jedem PR mit Code-Änderungen erhöht werden; nach dem Merge nach `master` entsteht das signierte APK als Release `android-connector-v<version>`. Einrichtung des Signatur-Keystores: [dartAndroidMqttConnector/README.md](dart-board-connector/dartAndroidMqttConnector/README.md).
+
 Die `v*`-Tags (z.B. `v0.1.3a`) gehören weiterhin zum java-ui-client (`.github/workflows/main.yml`).
 
 
@@ -343,7 +345,7 @@ Mit folgendem Befehl den Connector starten:
 python dartBlueMqttConnector.py
 ```  
 ### DartAndroidMQTTConnector
-Entweder mit Android Studio öffnen und auf das Handy übertragen oder die APK auf das Handy ziehen (Release TODO). Die App ist im grunde selbsterklärend: MQTT Broker und Dartboard Einstellungen anpassen und die Buttons drücken.  
+Entweder mit Android Studio öffnen und auf das Handy übertragen oder das APK aus den [GitHub-Releases](https://github.com/GittiMcHub/online-dart/releases) (`android-connector-v…`) auf dem Handy installieren. Die App ist im grunde selbsterklärend: MQTT Broker und Dartboard Einstellungen anpassen und die Buttons drücken.  
 
 ## Troubleshooting
 Wenn ihr Online gegeneinander spielt, achtet darauf, dass ihr euren Router und eure Firewall entsprechend konfiguriert. Auch wenn ihr den MQTT Broker auf einem anderen PC im LAN laufen lasst, kann es u.U. nötig sein die Firewall Einstellungen anzupassen.
