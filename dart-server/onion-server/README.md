@@ -11,17 +11,17 @@ Dartboards (SimpleJavaBLE) — oder klassisch als One-Shot-Server per CLI.
 
 ## Schnellstart
 
-Voraussetzung: Java 17+.
+Voraussetzung: Java 21+ (das vendorte SimpleJavaBLE-Jar in `libs/` ist für Java 21 gebaut).
 
 ```bash
 ./gradlew fatJar
-java -jar build/libs/onion-server-2.0-all.jar --help
+java -jar build/libs/onion-server-2.1-all.jar --help
 ```
 
 **Web-Modus (Standard, ohne `--player`):**
 
 ```bash
-java -jar build/libs/onion-server-2.0-all.jar
+java -jar build/libs/onion-server-2.1-all.jar
 # Browser: http://localhost:8420/
 ```
 
@@ -35,7 +35,7 @@ gebundelt).
 **Klassischer One-Shot (wie bisher, sobald `--player` gesetzt ist):**
 
 ```bash
-java -jar build/libs/onion-server-2.0-all.jar \
+java -jar build/libs/onion-server-2.1-all.jar \
   --embedded-broker \
   --player Alice:1 --player Bob:2
 ```
@@ -56,10 +56,10 @@ gehabt über `--mqtt-config ./mqttbroker.conf` bzw. `--mqtt-host` & Co.
 
 ```bash
 # Server-Rechner (startet Broker + Verwaltung sofort, headless-tauglich):
-java -jar onion-server-2.0-all.jar --mode server --auto-broker --server-name "Keller"
+java -jar onion-server-2.1-all.jar --mode server --auto-broker --server-name "Keller"
 
 # Client-Rechner (verbindet sich auf den Broker des Servers):
-java -jar onion-server-2.0-all.jar --mode client --web-port 8421 \
+java -jar onion-server-2.1-all.jar --mode client --web-port 8421 \
   --mqtt-host <server-ip> --mqtt-user dartboard --mqtt-password smartness --auto-broker
 # Browser: http://localhost:8421/ → Board suchen → verbinden → Lobby beitreten
 ```
@@ -251,8 +251,24 @@ Bounce-Out (`996`) mitten im Spielzug verwirft den laufenden Spielzug;
 ./gradlew build          # kompilieren + alle Tests
 ./gradlew test           # nur Tests (Domäne, Application, Infrastruktur)
 ./gradlew run --args="--help"
-./gradlew fatJar         # build/libs/onion-server-2.0-all.jar
+./gradlew fatJar         # build/libs/onion-server-2.1-all.jar
 ```
+
+### Version & Releases
+
+Die Version steht in `build.gradle` (`version = '2.1' + …`) und landet auch
+im Jar-Manifest (`Implementation-Version`). Regeln (CI:
+`.github/workflows/onion-server.yml`):
+
+- **Jeder PR, der den Server ändert, erhöht die Version** (Bugfix 2.1 → 2.1.1,
+  Feature 2.1 → 2.2). Existiert `onion-server-v<version>` schon als
+  Release-Tag, schlägt der PR-Build fehl. Reine `*.md`-Änderungen zählen nicht.
+- PR-Build: Tests + `onion-server-<version>-pr<N>.<run>-all.jar` als
+  Workflow-Artefakt (7 Tage). Lokal nachstellen:
+  `./gradlew fatJar -PversionSuffix=-pr27.1`.
+- Merge nach `master`: GitHub-Release `onion-server-v<version>` mit dem
+  Fat-Jar. Ob die SteamOS-App die neue Version übernimmt, entscheidet der Pin
+  in `dart-steamos/package.json` (siehe [dart-steamos](../../dart-steamos/README.md#versionen--releases)).
 
 ### Architektur (Onion, 3 Ringe — Abhängigkeiten zeigen nur nach innen)
 ## Ziel-Architektur (Onion, 3 Ringe)

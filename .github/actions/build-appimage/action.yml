@@ -1,0 +1,62 @@
+name: SteamOS-AppImage bauen
+description: >
+  Baut das dart-steamos-AppImage mit einem bestimmten onion-server-Jar
+  (vorhandenes Jar oder Release-Version). Erwartet ein ausgechecktes Repo.
+
+inputs:
+  server-jar:
+    description: Absoluter Pfad zu einem vorhandenen Fat-Jar (hat Vorrang vor server-version)
+    required: false
+    default: ''
+  server-version:
+    description: Release-Version des onion-servers (lädt onion-server-v<version>)
+    required: false
+    default: ''
+  app-version:
+    description: Version, die ins AppImage geschrieben wird (z.B. 2.0.0 oder 2.0.0-pr27.3)
+    required: true
+  file-name:
+    description: Dateiname des AppImages ohne Endung
+    required: true
+
+outputs:
+  path:
+    description: Pfad zum gebauten AppImage
+    value: ${{ steps.build.outputs.path }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-java@v6
+      with:
+        distribution: temurin
+        java-version: '21'
+
+    - uses: actions/setup-node@v7
+      with:
+        node-version: '20'
+        cache: npm
+        cache-dependency-path: dart-steamos/package-lock.json
+
+    - name: npm ci
+      shell: bash
+      working-directory: dart-steamos
+      run: npm ci
+
+    - id: build
+      name: Laufzeit + AppImage bauen
+      shell: bash
+      working-directory: dart-steamos
+      env:
+        SERVER_JAR: ${{ inputs.server-jar }}
+        SERVER_VERSION: ${{ inputs.server-version }}
+        APP_VERSION: ${{ inputs.app-version }}
+        FILE_NAME: ${{ inputs.file-name }}
+      run: |
+        [[ -n "$SERVER_JAR" ]] || unset SERVER_JAR
+        [[ -n "$SERVER_VERSION" ]] || unset SERVER_VERSION
+        scripts/build-runtime.sh
+        npx electron-builder --linux AppImage --publish never \
+          -c.extraMetadata.version="$APP_VERSION" \
+          -c.artifactName="$FILE_NAME"'.${ext}'
+        echo "path=dart-steamos/dist/$FILE_NAME.AppImage" >> "$GITHUB_OUTPUT"

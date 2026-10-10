@@ -1,0 +1,192 @@
+# dart-steamos: AppImage (Electron + JRE + onion-server-Jar)
+#   Pull Request → AppImages als Workflow-Artefakte (7 Tage):
+#                  - PR ändert den onion-server: ein AppImage mit dem Jar aus dem PR
+#                  - sonst: eines mit der gepinnten Server-Version (package.json "onionServerVersion")
+#                    und, falls ein neueres onion-server-Release existiert, zusätzlich "-latest"
+#                  PR schlägt fehl, wenn dart-steamos geändert ist und steamos-v<version>
+#                  schon existiert, oder wenn der Pin auf kein (kommendes) Release zeigt
+#   Merge master → GitHub-Release steamos-v<version> mit dem gepinnten Server-Release
+name: steamos
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - 'dart-steamos/**'
+      - '!dart-steamos/**/*.md'
+      - 'dart-server/onion-server/**'
+      - '!dart-server/onion-server/**/*.md'
+      - '.github/workflows/steamos.yml'
+      - '.github/actions/build-appimage/**'
+  push:
+    branches: [master]
+    paths:
+      - 'dart-steamos/**'
+      - '!dart-steamos/**/*.md'
+
+concurrency:
+  group: steamos-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  GH_TOKEN: ${{ github.token }}
+  GH_REPO: ${{ github.repository }}
+
+jobs:
+  plan:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    outputs:
+      app-version: ${{ steps.plan.outputs.app-version }}
+      matrix: ${{ steps.plan.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - id: plan
+        name: Varianten bestimmen
+        run: |
+          app="$(node -p "require('./dart-steamos/package.json').version")"
+          pin="$(node -p "require('./dart-steamos/package.json').onionServerVersion")"
+          server="$(sed -n "s/^version = '\(.*\)' +.*/\1/p" dart-server/onion-server/build.gradle)"
+          pr_suffix="-pr${{ github.event.number }}.${{ github.run_number }}"
+          app_version="$app$pr_suffix"
+
+          changed="$(git diff --name-only "${{ github.event.pull_request.base.sha }}...HEAD" | grep -v '\.md$' || true)"
+          server_changed=false; steamos_changed=false
+          grep -q '^dart-server/onion-server/' <<<"$changed" && server_changed=true
+          grep -q '^dart-steamos/' <<<"$changed" && steamos_changed=true
+          echo "Server geändert: $server_changed, dart-steamos geändert: $steamos_changed"
+
+          releases="$(gh release list --limit 200 --json tagName --jq '.[].tagName')"
+          if $steamos_changed && grep -qx "steamos-v$app" <<<"$releases"; then
+            echo "::error file=dart-steamos/package.json::steamos-v$app ist bereits veröffentlicht — version in package.json erhöhen."
+            exit 1
+          fi
+          if ! grep -qx "onion-server-v$pin" <<<"$releases" && [[ "$pin" != "$server" ]]; then
+            echo "::error file=dart-steamos/package.json::onionServerVersion $pin ist weder veröffentlicht noch die Version in build.gradle ($server)."
+            exit 1
+          fi
+
+          if $server_changed; then
+            jar_version="$server$pr_suffix"
+            matrix="$(jq -nc --arg v "$jar_version" --arg f "OnlineDart-$app_version+server.$jar_version" \
+              '[{variant: "pr", server: $v, file: $f}]')"
+          else
+            matrix="$(jq -nc --arg v "$pin" --arg f "OnlineDart-$app_version+server.$pin" \
+              '[{variant: "pinned", server: $v, file: $f}]')"
+            latest="$(sed -n 's/^onion-server-v//p' <<<"$releases" | sort -V | tail -1)"
+            if [[ -n "$latest" && "$latest" != "$pin" \
+                  && "$(printf '%s\n%s\n' "$pin" "$latest" | sort -V | tail -1)" == "$latest" ]]; then
+              echo "Neueres onion-server-Release $latest (Pin: $pin) → zusätzlich -latest"
+              matrix="$(jq -c --arg v "$latest" --arg f "OnlineDart-$app_version+server.$latest-latest" \
+                '. + [{variant: "latest", server: $v, file: $f}]' <<<"$matrix")"
+            fi
+          fi
+          echo "app-version=$app_version" >> "$GITHUB_OUTPUT"
+          echo "matrix=$matrix"           >> "$GITHUB_OUTPUT"
+          echo "Varianten: $matrix"
+
+  pr-build:
+    needs: plan
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    name: AppImage (${{ matrix.variant }}, server ${{ matrix.server }})
+    steps:
+      - uses: actions/checkout@v7
+
+      - if: matrix.variant == 'pr'
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - id: jar
+        if: matrix.variant == 'pr'
+        name: onion-server-Jar aus dem PR bauen
+        working-directory: dart-server/onion-server
+        run: |
+          base="$(sed -n "s/^version = '\(.*\)' +.*/\1/p" build.gradle)"
+          ./gradlew fatJar -PversionSuffix="${MATRIX_SERVER#"$base"}"
+          echo "path=$PWD/build/libs/onion-server-$MATRIX_SERVER-all.jar" >> "$GITHUB_OUTPUT"
+        env:
+          MATRIX_SERVER: ${{ matrix.server }}
+
+      - id: appimage
+        uses: ./.github/actions/build-appimage
+        with:
+          server-jar: ${{ steps.jar.outputs.path }}
+          server-version: ${{ matrix.variant != 'pr' && matrix.server || '' }}
+          app-version: ${{ needs.plan.outputs.app-version }}
+          file-name: ${{ matrix.file }}
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.file }}
+          path: ${{ steps.appimage.outputs.path }}
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - id: version
+        name: Version prüfen
+        run: |
+          app="$(node -p "require('./dart-steamos/package.json').version")"
+          pin="$(node -p "require('./dart-steamos/package.json').onionServerVersion")"
+          echo "app=$app" >> "$GITHUB_OUTPUT"
+          echo "pin=$pin" >> "$GITHUB_OUTPUT"
+          if gh release view "steamos-v$app" >/dev/null 2>&1; then
+            echo "::warning::steamos-v$app existiert bereits — kein neues Release (Version nicht erhöht?)."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Auf onion-server-Release warten
+        if: steps.version.outputs.release == 'true'
+        # wurden Server und Pin im selben PR erhöht, baut der onion-server-Workflow
+        # das Release parallel — bis zu 20 Minuten darauf warten
+        run: |
+          for _ in $(seq 40); do
+            gh release view "onion-server-v${{ steps.version.outputs.pin }}" >/dev/null 2>&1 && exit 0
+            echo "onion-server-v${{ steps.version.outputs.pin }} noch nicht da, warte…"
+            sleep 30
+          done
+          echo "::error::onion-server-v${{ steps.version.outputs.pin }} nicht gefunden."
+          exit 1
+
+      - id: appimage
+        if: steps.version.outputs.release == 'true'
+        uses: ./.github/actions/build-appimage
+        with:
+          server-version: ${{ steps.version.outputs.pin }}
+          app-version: ${{ steps.version.outputs.app }}
+          file-name: OnlineDart-${{ steps.version.outputs.app }}
+
+      - name: GitHub-Release erstellen
+        if: steps.version.outputs.release == 'true'
+        env:
+          APP: ${{ steps.version.outputs.app }}
+          PIN: ${{ steps.version.outputs.pin }}
+        run: |
+          prev="$(gh release list --limit 200 --json tagName --jq '.[].tagName' \
+                  | sed -n 's/^steamos-v//p' | sort -V | tail -1)"
+          notes=(--generate-notes)
+          [[ -n "$prev" ]] && notes+=(--notes-start-tag "steamos-v$prev")
+          gh release create "steamos-v$APP" "${{ steps.appimage.outputs.path }}" \
+            --target "$GITHUB_SHA" --title "OnlineDart (SteamOS) $APP — onion-server $PIN" "${notes[@]}"

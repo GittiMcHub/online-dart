@@ -12,18 +12,28 @@ muss nichts installiert werden, auch kein Java.
 
 Voraussetzungen (nur auf dem Build-Rechner, Linux x64):
 
-- JDK 17+ (inkl. `jdeps`/`jlink`)
+- JDK 21+ (inkl. `jdeps`/`jlink`; das gebündelte JRE wird daraus erzeugt)
 - Node.js 18+ und npm
 
 ```bash
 cd dart-steamos
 npm install
-npm run dist        # baut Fat-Jar + JRE (scripts/build-runtime.sh) und dann das AppImage
+npm run dist        # lädt das gepinnte Server-Release, baut JRE (scripts/build-runtime.sh) und das AppImage
+npm run dist:local  # wie dist, aber mit Fat-Jar aus ../dart-server/onion-server (lokaler Stand)
 ```
 
+Woher das Server-Jar kommt, steuert `scripts/build-runtime.sh`:
+
+| Aufruf | Server-Jar |
+|---|---|
+| `SERVER_JAR=/pfad/zum/jar` | genau dieses Jar |
+| `--from-source` (`dist:local`) | aus den Quellen gebaut |
+| `SERVER_VERSION=2.2` | Release `onion-server-v2.2` von GitHub |
+| ohne Angabe (`dist`) | gepinntes Release aus `package.json` → `onionServerVersion` |
+
 Ergebnis: `dist/OnlineDart-<version>.AppImage` (~180 MB).
-Das AppImage **nicht ins Repo committen** — es ist dafür zu groß; stattdessen über
-GitHub Releases veröffentlichen. `resources/` und `dist/` sind gitignored.
+Das AppImage **nicht ins Repo committen** — es ist dafür zu groß; Releases baut
+und veröffentlicht die CI (siehe unten). `resources/` und `dist/` sind gitignored.
 
 Entwicklung ohne AppImage: `npm start` nutzt das System-Java und das lokal gebaute
 Fat-Jar aus `../dart-server/onion-server/build/libs/`.
@@ -93,7 +103,44 @@ Rechner die Würfe liefern.
 - Remote-Spiel (Tailscale/Netbird o.ä.) ist Sache des Netzwerks, nicht dieser App:
   Mitspieler verbinden ihre Clients einfach gegen Broker/Weboberfläche des Decks.
 
-## Versionen
+## Versionen & Releases
+
+`package.json` enthält zwei Versionen:
+
+- `version` — die Version der App (des AppImages), Tag `steamos-v<version>`.
+- `onionServerVersion` — das gepinnte onion-server-Release, das ins AppImage
+  kommt. Wird **von Hand** erhöht, wenn eine neue Server-Version auf das Deck soll.
+
+Wann `version` erhöht wird:
+
+| Änderung | App-Version |
+|---|---|
+| Pin auf neuen Server-Patch (2.1 → 2.1.1) | Patch |
+| Pin auf neue Server-Minor/-Major (2.1 → 2.2) — auch neue TV-UI-Features, `/tv/` liegt im Server | Minor |
+| Nur Electron-Hülle (`main.js`, `preload.js`, Build-Konfiguration) | Patch oder Minor, je nach Änderung |
+| Electron-Major-Update, inkompatibles Start-/Konfigurationsverhalten | Major |
+| Neues Server-Release, das (noch) nicht aufs Deck soll | keine — Pin bleibt |
+
+CI (`.github/workflows/steamos.yml`):
+
+- **Pull Request** → AppImages als Workflow-Artefakte (7 Tage):
+  - ändert der PR den onion-server: eines mit dem Server-Jar aus dem PR
+    (`OnlineDart-<app>-pr<N>.<run>+server.<server>-pr<N>.<run>.AppImage`) —
+    so lässt sich ein Server-Fix direkt auf dem Deck testen;
+  - sonst eines mit dem gepinnten Server (`…+server.<pin>.AppImage`) und, falls
+    es ein neueres onion-server-Release gibt, zusätzlich eines damit
+    (`…+server.<neuste>-latest.AppImage`).
+  - Der PR schlägt fehl, wenn `dart-steamos/` geändert wurde und
+    `steamos-v<version>` schon existiert, oder wenn der Pin weder auf ein
+    Release noch auf die Server-Version im selben PR zeigt.
+- **Merge nach `master`** (bei Änderungen in `dart-steamos/`) → GitHub-Release
+  `steamos-v<version>` mit dem AppImage, gebaut mit dem gepinnten Server-Release.
+  Werden Server und Pin im selben PR erhöht, wartet der Job auf das Server-Release.
+- Nach jedem **onion-server-Release** baut `onion-server.yml` zusätzlich ein
+  `-latest`-AppImage mit dem neuen Server, solange der Pin noch älter ist —
+  zum Ausprobieren vor dem Pin-Update.
+
+### Electron
 
 `electron` und `electron-builder` sind exakt gepinnt (Electron 36.x läuft mit
 Node 18-Tooling; neuere Electron-Majors verlangen Node ≥ 22 zum Bauen). Beim

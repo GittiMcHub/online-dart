@@ -1,0 +1,159 @@
+# onion-server: Tests + Fat-Jar
+#   Pull Request → onion-server-<version>-pr<N>.<run>-all.jar als Workflow-Artefakt (7 Tage)
+#                  PR schlägt fehl, wenn onion-server-v<version> schon existiert (Version erhöhen!)
+#   Merge master → GitHub-Release onion-server-v<version> mit dem Jar,
+#                  danach ein SteamOS-AppImage mit diesem Server als "-latest"-Artefakt,
+#                  falls dart-steamos noch eine ältere Version pinnt
+name: onion-server
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - 'dart-server/onion-server/**'
+      - '!dart-server/onion-server/**/*.md'
+      - '.github/workflows/onion-server.yml'
+  push:
+    branches: [master]
+    paths:
+      - 'dart-server/onion-server/**'
+      - '!dart-server/onion-server/**/*.md'
+
+concurrency:
+  group: onion-server-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: dart-server/onion-server
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag-exists: ${{ steps.version.outputs.tag-exists }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - id: version
+        name: Version bestimmen
+        run: |
+          base="$(sed -n "s/^version = '\(.*\)' +.*/\1/p" build.gradle)"
+          [[ -n "$base" ]] || { echo "::error::Version in build.gradle nicht gefunden"; exit 1; }
+          if git ls-remote --exit-code --tags origin "refs/tags/onion-server-v$base" >/dev/null; then
+            tag_exists=true
+          else
+            tag_exists=false
+          fi
+          suffix=""
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            suffix="-pr${{ github.event.number }}.${{ github.run_number }}"
+          fi
+          echo "base=$base"            >> "$GITHUB_OUTPUT"
+          echo "suffix=$suffix"        >> "$GITHUB_OUTPUT"
+          echo "version=$base$suffix"  >> "$GITHUB_OUTPUT"
+          echo "tag-exists=$tag_exists" >> "$GITHUB_OUTPUT"
+          echo "onion-server $base$suffix (Tag onion-server-v$base existiert: $tag_exists)"
+
+      - name: Versionsprüfung
+        if: github.event_name == 'pull_request' && steps.version.outputs.tag-exists == 'true'
+        run: |
+          echo "::error file=dart-server/onion-server/build.gradle::onion-server-v${{ steps.version.outputs.base }} ist bereits veröffentlicht — Version in build.gradle erhöhen."
+          exit 1
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Build + Tests
+        run: ./gradlew build fatJar -PversionSuffix="${{ steps.version.outputs.suffix }}"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: onion-server-${{ steps.version.outputs.version }}
+          path: dart-server/onion-server/build/libs/onion-server-${{ steps.version.outputs.version }}-all.jar
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    needs: build
+    if: github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      VERSION: ${{ needs.build.outputs.version }}
+    outputs:
+      released: ${{ steps.release.outputs.released }}
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: onion-server-${{ needs.build.outputs.version }}
+
+      - id: release
+        name: GitHub-Release erstellen
+        run: |
+          if [[ "${{ needs.build.outputs.tag-exists }}" == "true" ]]; then
+            echo "::warning::onion-server-v$VERSION existiert bereits — kein neues Release (Version nicht erhöht?)."
+            echo "released=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          prev="$(gh release list --limit 200 --json tagName --jq '.[].tagName' \
+                  | sed -n 's/^onion-server-v//p' | sort -V | tail -1)"
+          notes=(--generate-notes)
+          [[ -n "$prev" ]] && notes+=(--notes-start-tag "onion-server-v$prev")
+          gh release create "onion-server-v$VERSION" "onion-server-$VERSION-all.jar" \
+            --target "$GITHUB_SHA" --title "onion-server $VERSION" --latest=false "${notes[@]}"
+          echo "released=true" >> "$GITHUB_OUTPUT"
+
+  steamos-latest:
+    needs: [build, release]
+    if: needs.release.outputs.released == 'true'
+    runs-on: ubuntu-24.04
+    env:
+      VERSION: ${{ needs.build.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - id: steamos
+        name: Gepinnte Server-Version prüfen
+        working-directory: dart-steamos
+        run: |
+          app="$(node -p "require('./package.json').version")"
+          pin="$(node -p "require('./package.json').onionServerVersion")"
+          echo "app=$app" >> "$GITHUB_OUTPUT"
+          if [[ "$pin" == "$VERSION" ]]; then
+            echo "dart-steamos pinnt bereits $VERSION — Release kommt aus dem steamos-Workflow."
+            echo "build=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - if: steps.steamos.outputs.build == 'true'
+        uses: actions/download-artifact@v8
+        with:
+          name: onion-server-${{ needs.build.outputs.version }}
+          path: ${{ runner.temp }}/server
+
+      - id: appimage
+        if: steps.steamos.outputs.build == 'true'
+        uses: ./.github/actions/build-appimage
+        with:
+          server-jar: ${{ runner.temp }}/server/onion-server-${{ needs.build.outputs.version }}-all.jar
+          app-version: ${{ steps.steamos.outputs.app }}
+          file-name: OnlineDart-${{ steps.steamos.outputs.app }}+server.${{ needs.build.outputs.version }}-latest
+
+      - if: steps.steamos.outputs.build == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: OnlineDart-${{ steps.steamos.outputs.app }}+server.${{ needs.build.outputs.version }}-latest
+          path: ${{ steps.appimage.outputs.path }}
+          if-no-files-found: error
+          retention-days: 7
