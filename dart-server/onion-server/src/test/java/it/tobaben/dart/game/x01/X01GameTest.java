@@ -483,4 +483,43 @@ class X01GameTest {
         game.playTurn(segment);
     }
 
+    @Test
+    void projectedRankingShouldOrderOpenPlayersByRemainingScore() throws GameOverException, InvalidStateException {
+        X01Game game = default301();
+        Player p1 = new Player("P1");
+        Player p2 = new Player("P2");
+        Player p3 = new Player("P3");
+        game.addPlayer(p1);
+        game.addPlayer(p2);
+        game.addPlayer(p3);
+        // before the first dart everybody has 301: turn order
+        assertEquals(List.of(p1, p2, p3), game.getProjectedRanking());
+
+        game.playTurn(Segment.SINGLE_1);
+        game.playTurn(Segment.SINGLE_1);
+        game.playTurn(Segment.SINGLE_1);   // P1 298
+        game.playTurn(Segment.TRIPLE_20);
+        game.playTurn(Segment.TRIPLE_20);
+        game.playTurn(Segment.TRIPLE_20);  // P2 121
+        game.playTurn(Segment.TRIPLE_20);  // P3 mid-turn, staged 241
+        assertEquals(List.of(p2, p3, p1), game.getProjectedRanking());
+    }
+
+    @Test
+    void projectedRankingShouldPutFinishedPlayersFirst() throws GameOverException, InvalidStateException {
+        X01Game game = new X01Game(40, false, false);
+        Player p1 = new Player("P1");
+        Player p2 = new Player("P2");
+        Player p3 = new Player("P3");
+        game.addPlayer(p1);
+        game.addPlayer(p2);
+        game.addPlayer(p3);
+
+        game.playTurn(Segment.DOUBLE_20);  // P1 finished
+        game.playTurn(Segment.SINGLE_1);
+        game.playTurn(Segment.SINGLE_1);
+        game.playTurn(Segment.SINGLE_1);   // P2 37
+        game.playTurn(Segment.SINGLE_20);  // P3 mid-turn 20
+        assertEquals(List.of(p1, p3, p2), game.getProjectedRanking());
+    }
 }

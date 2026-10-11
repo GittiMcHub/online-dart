@@ -8,7 +8,7 @@ description 'Dart Server'
 // Basisversion: bei jeder Änderung am Server erhöhen (CI lehnt PRs ab, deren
 // Version schon als Release-Tag onion-server-v<version> existiert).
 // PR-Builds hängen -PversionSuffix=-pr<N>.<run> an, siehe .github/workflows/
-version = '2.1.1' + (findProperty('versionSuffix') ?: '')
+version = '2.2.0' + (findProperty('versionSuffix') ?: '')
 
 repositories {
     mavenCentral()

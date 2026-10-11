@@ -1,5 +1,6 @@
 package it.tobaben.dart.infrastructure;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import it.tobaben.dart.application.*;
@@ -71,9 +72,12 @@ class AnthraxJsonMapperTest {
         for (String field : SCHEMA_ROOT_FIELDS) {
             assertTrue(root.has(field), "missing root field: " + field);
         }
-        // X01 stays byte-compatible: no extension fields
-        assertFalse(root.has("gameMode"));
-        assertFalse(root.has("modeData"));
+        // X01 carries its rules too, so clients can compute e.g. checkout hints
+        assertEquals("X01", root.get("gameMode").getAsString());
+        JsonObject modeData = root.getAsJsonObject("modeData");
+        assertEquals("301", modeData.get("startScore").getAsString());
+        assertEquals("false", modeData.get("doubleIn").getAsString());
+        assertEquals("false", modeData.get("doubleOut").getAsString());
 
         JsonObject currentPlayer = root.getAsJsonObject("currentPlayer");
         for (String field : SCHEMA_SPIELER_FIELDS) {
@@ -159,5 +163,20 @@ class AnthraxJsonMapperTest {
         assertEquals(-1, MqttAdapter.extractDartboardId("dartboard/abc"));
         assertEquals(-1, MqttAdapter.extractDartboardId("status/gameUpdate"));
         assertEquals(-1, MqttAdapter.extractDartboardId("dartboard/"));
+    }
+
+    @Test
+    void spielerCarryProjectionsAndPlacementSum() {
+        // Alice threw T20 (241) vs Bob 301: Alice place 1, Bob place 2
+        JsonObject root = JsonParser.parseString(AnthraxJsonMapper.toJson(playX01Update().lastUpdate())).getAsJsonObject();
+        JsonArray order = root.getAsJsonArray("spielerReihenfolge");
+        JsonObject alice = order.get(0).getAsJsonObject();
+        JsonObject bob = order.get(1).getAsJsonObject();
+        assertEquals(1, alice.get("platzProjektion").getAsInt());
+        assertEquals(2, bob.get("platzProjektion").getAsInt());
+        assertEquals(1, alice.get("strafpunkteProjektion").getAsInt());
+        assertEquals(2, bob.get("strafpunkteProjektion").getAsInt());
+        assertEquals(1, root.getAsJsonObject("currentPlayer").get("platzProjektion").getAsInt());
+        assertEquals(0, alice.getAsJsonObject("statistik").get("summePlatzierungen").getAsInt());
     }
 }

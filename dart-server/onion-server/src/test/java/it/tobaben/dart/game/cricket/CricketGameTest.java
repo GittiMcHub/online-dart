@@ -226,4 +226,21 @@ class CricketGameTest {
         game.playTurn(segment);
     }
 
+    @Test
+    void projectedRankingShouldFollowPointsWhileRunning() throws GameOverException, InvalidStateException {
+        CricketGame game = new CricketGame();
+        Player player1 = new Player("Player1");
+        Player player2 = new Player("Player2");
+        game.addPlayer(player1);
+        game.addPlayer(player2);
+        // not started yet: turn order
+        assertEquals(List.of(player1, player2), game.getProjectedRanking());
+
+        game.playTurn(Segment.SINGLE_1);
+        game.playTurn(Segment.SINGLE_1);
+        game.playTurn(Segment.SINGLE_1);   // Player1: nothing
+        game.playTurn(Segment.TRIPLE_20);  // Player2 closes 20
+        game.playTurn(Segment.TRIPLE_20);  // Player2 scores 60
+        assertEquals(List.of(player2, player1), game.getProjectedRanking());
+    }
 }

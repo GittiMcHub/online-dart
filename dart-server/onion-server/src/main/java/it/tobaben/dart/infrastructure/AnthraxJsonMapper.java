@@ -7,16 +7,15 @@ import it.tobaben.dart.application.EngineState;
 import it.tobaben.dart.application.EngineUpdate;
 import it.tobaben.dart.application.PlayerStatistics;
 import it.tobaben.dart.application.RegisteredPlayer;
-import it.tobaben.dart.game.x01.X01Game;
 
 import java.util.Map;
 
 /**
  * Renders an EngineUpdate into the anthrax status/gameUpdate JSON
  * (dart-server/schema.json): German field names, players as Spieler objects
- * with embedded statistik, gameState as string. For non-X01 modes the fields
- * "gameMode" and "modeData" are appended (schema extension, see TODO Phase 5);
- * "punktestand" then carries the mode's main score (Cricket: points).
+ * with embedded statistik, gameState as string. The schema extension fields
+ * "gameMode" and "modeData" are always appended (X01: startScore, doubleIn,
+ * doubleOut); "punktestand" carries the mode's main score (Cricket: points).
  */
 public final class AnthraxJsonMapper {
 
@@ -48,14 +47,12 @@ public final class AnthraxJsonMapper {
         root.addProperty("letzterWurf", update.lastThrowValue());
         root.addProperty("gameState", update.state().name());
 
-        if (!X01Game.GAME_MODE.equals(update.snapshot().gameMode())) {
-            root.addProperty("gameMode", update.snapshot().gameMode());
-            JsonObject modeData = new JsonObject();
-            for (Map.Entry<String, String> entry : update.snapshot().modeData().entrySet()) {
-                modeData.addProperty(entry.getKey(), entry.getValue());
-            }
-            root.add("modeData", modeData);
+        root.addProperty("gameMode", update.snapshot().gameMode());
+        JsonObject modeData = new JsonObject();
+        for (Map.Entry<String, String> entry : update.snapshot().modeData().entrySet()) {
+            modeData.addProperty(entry.getKey(), entry.getValue());
         }
+        root.add("modeData", modeData);
         return GSON.toJson(root);
     }
 
@@ -97,6 +94,10 @@ public final class AnthraxJsonMapper {
         boolean atTheBoard = registered.equals(update.currentPlayer())
                 && update.state() == EngineState.RUNNING;
         spieler.addProperty("freieWuerfe", atTheBoard ? update.freieWuerfe() : 0);
+        spieler.addProperty("platzProjektion",
+                update.projectedPlaces().getOrDefault(registered.id(), 0));
+        spieler.addProperty("strafpunkteProjektion",
+                update.projectedPenalties().getOrDefault(registered.id(), 0));
         spieler.add("statistik", GSON.toJsonTree(registered.statistics()));
         return spieler;
     }

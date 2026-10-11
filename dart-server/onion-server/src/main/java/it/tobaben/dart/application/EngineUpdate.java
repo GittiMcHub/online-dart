@@ -3,6 +3,7 @@ package it.tobaben.dart.application;
 import it.tobaben.dart.game.GameSnapshot;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Everything an outbound publisher needs to render a status/gameUpdate message.
@@ -21,6 +22,10 @@ import java.util.List;
  * @param turnSum           sum thrown in the current/last turn
  * @param playersInOrder    turn order of the current game
  * @param ranking           finished players so far, winner first
+ * @param projectedPlaces   RegisteredPlayer id -> place if the game ended now;
+ *                          empty once the game is finished (then booked)
+ * @param projectedPenalties projectedPlaces if the placement penalty rule is on,
+ *                          otherwise empty
  */
 public record EngineUpdate(
         int gameId,
@@ -33,6 +38,8 @@ public record EngineUpdate(
         int lastThrowValue,
         int turnSum,
         List<RegisteredPlayer> playersInOrder,
-        List<RegisteredPlayer> ranking
+        List<RegisteredPlayer> ranking,
+        Map<Integer, Integer> projectedPlaces,
+        Map<Integer, Integer> projectedPenalties
 ) {
 }

@@ -77,6 +77,17 @@ Die Anzeige verbindet sich per MQTT-over-WebSocket direkt auf den Broker
 (Port 8083) — die Zugangsdaten stehen dafür in `/config.js` und sind damit
 im LAN sichtbar (gleiches Niveau wie bisher hardcodiert im webapp-client).
 
+Auf der TV-Oberfläche öffnet das Spielmenü (☰/F) → **Anzeigen**: Finish-Hilfe
+(nur X01, 1/2/3-Dart), Trefferbild (Treffer des aktiven Spielers im Turnier)
+und Blitztabelle (Strafpunkte inkl. Prognose des laufenden Spiels; bei 0 Cent
+pro Strafpunkt zählen nur die Platzierungen). Die Auswahl wird pro TV im
+Browser gespeichert.
+
+Nach dem Turnier zeigt der Ergebnis-Screen eine Übersicht (Turnier-Blitztabelle,
+Achievements wie Höchstes Finish oder Bester Spiel-Avg.) und mit ◀▶ je Spiel eine Tabelle
+mit Platz, Wert des Spiels und laufender Turniersumme. Der TV schreibt dafür die Spielenden
+selbst mit — hat er Spiele verpasst, fehlen deren Einzelwerte.
+
 ### Lobby über MQTT (für eigene Clients)
 
 | Topic | Richtung | QoS | Retained | Inhalt |
@@ -250,6 +261,8 @@ Bounce-Out (`996`) mitten im Spielzug verwirft den laufenden Spielzug;
 ```bash
 ./gradlew build          # kompilieren + alle Tests
 ./gradlew test           # nur Tests (Domäne, Application, Infrastruktur)
+node --test src/test/js/ # Logik der TV-Anzeigen (Finish-Hilfe, Trefferbild, Blitztabelle); Node ≥ 18, nicht in CI
+./gradlew processResources --continuous   # parallel zu ./gradlew run: Web-UI-Änderungen ohne Neustart
 ./gradlew run --args="--help"
 ./gradlew fatJar         # build/libs/onion-server-2.1-all.jar
 ```

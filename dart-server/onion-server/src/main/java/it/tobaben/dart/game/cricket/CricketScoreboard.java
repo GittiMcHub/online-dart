@@ -150,6 +150,22 @@ public class CricketScoreboard {
         return ranking;
     }
 
+    /**
+     * @return the final ranking once decided, otherwise the current standing:
+     *         points descending, then total marks descending, then turn order
+     */
+    public List<Player> getProjectedRanking() {
+        List<Player> ranking = getRanking();
+        if (!ranking.isEmpty()) {
+            return ranking;
+        }
+        return this.players.stream()
+                .sorted(Comparator
+                        .comparingInt((Player player) -> getPoints(player)).reversed()
+                        .thenComparing(Comparator.comparingInt(this::totalMarks).reversed()))
+                .toList();
+    }
+
     private int totalMarks(Player player) {
         return this.marks.get(player).values().stream().mapToInt(Integer::intValue).sum();
     }

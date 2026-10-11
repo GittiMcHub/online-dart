@@ -59,6 +59,38 @@ class EmbeddedBrokerTest {
         subscriber.disconnect();
     }
 
+    // gameUpdates grow with players (statistik per Spieler, finished players are
+    // repeated in spielerPlatzierung) — Moquette's 8092-byte default dropped them
+    private static final String LARGE_GAME_UPDATE = "x".repeat(20_000);
+
+    @Test
+    void routesGameUpdatesLargerThanMoquettesDefaultLimit() throws Exception {
+        assertLargeMessageRouted("tcp://127.0.0.1:" + tcpPort);
+    }
+
+    @Test
+    void deliversLargeGameUpdatesToWebSocketDisplays() throws Exception {
+        assertLargeMessageRouted("ws://127.0.0.1:" + wsPort + "/");
+    }
+
+    private void assertLargeMessageRouted(String subscriberUrl) throws Exception {
+        MqttClient subscriber = connect(subscriberUrl, "display", "smartness");
+        CountDownLatch received = new CountDownLatch(1);
+        AtomicReference<String> payload = new AtomicReference<>();
+        subscriber.subscribe("status/gameUpdate", 1, (topic, message) -> {
+            payload.set(new String(message.getPayload()));
+            received.countDown();
+        });
+
+        MqttClient server = connect("tcp://127.0.0.1:" + tcpPort, "server", "smartness");
+        server.publish("status/gameUpdate", LARGE_GAME_UPDATE.getBytes(), 1, false);
+
+        assertTrue(received.await(5, TimeUnit.SECONDS), "large message not routed");
+        assertEquals(LARGE_GAME_UPDATE, payload.get());
+        server.disconnect();
+        subscriber.disconnect();
+    }
+
     @Test
     void acceptsWebSocketClientsLikeMosquitto() throws Exception {
         MqttClient wsClient = connect("ws://127.0.0.1:" + wsPort + "/", "ws", "smartness");

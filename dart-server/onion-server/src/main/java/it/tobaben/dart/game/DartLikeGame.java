@@ -37,6 +37,15 @@ public interface DartLikeGame {
     List<Player> getRanking();
 
     /**
+     * Returns the ranking as if the game ended now: finished players in their
+     * final order, then the remaining players by the mode's current standing,
+     * ties in turn order. Used for live penalty projections.
+     *
+     * @return all players, best first
+     */
+    List<Player> getProjectedRanking();
+
+    /**
      * Returns the current player.
      *
      * @return the current player

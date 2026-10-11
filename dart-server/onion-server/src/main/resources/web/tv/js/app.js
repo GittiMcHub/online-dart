@@ -16,6 +16,8 @@
   let wasRunning = false;     // Turnier lief -> bei IDLE zur Ergebnisanzeige
   let spectating = false;     // "Nur Anzeige": kein Wechsel zur Ergebnisanzeige
   let modal = null;           // {buttons: [{label, onSelect}], index}
+  let resultsLog = loadResultsLog(); // mitgeschriebene Spielenden fürs Ergebnis (results.js)
+  let resultsPage = 0;        // 0 = Übersicht, k = k-tes mitgeschriebenes Spiel
   const boardIdChoice = {};   // gewünschte Board-ID je MAC vor dem Verbinden
 
   // ################### Einstellungen (localStorage) ###################
@@ -42,6 +44,22 @@
 
   function saveSettings() {
     localStorage.setItem('tvSettings', JSON.stringify(settings));
+  }
+
+  function loadResultsLog() {
+    try {
+      return JSON.parse(localStorage.getItem('tvResultsLog'));
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function saveResultsLog() {
+    try {
+      localStorage.setItem('tvResultsLog', JSON.stringify(resultsLog));
+    } catch (e) {
+      // ohne Speicher gilt das Log nur bis zum Neuladen
+    }
   }
 
   function loadNames() {
@@ -114,7 +132,12 @@
     const list = $('modalButtons');
     list.innerHTML = '';
     modal.buttons.forEach((entry, i) => {
-      const button = item(escapeHtml(entry.label), 'modal-' + i);
+      const text = typeof entry.label === 'function' ? entry.label() : entry.label;
+      // Einstellungszeilen wie im Einstellungs-Screen: Wert rechts mit ◀ ▶
+      const html = entry.value
+        ? '<span>' + escapeHtml(text) + '</span><span class="value">◀ ' + escapeHtml(entry.value()) + ' ▶</span>'
+        : escapeHtml(text);
+      const button = item(html, 'modal-' + i);
       button.classList.toggle('tv-focus', i === modal.index);
       list.appendChild(button);
     });
@@ -129,6 +152,11 @@
     if (action === 'up' || action === 'down') {
       const count = modal.buttons.length;
       modal.index = (modal.index + (action === 'down' ? 1 : -1) + count) % count;
+      renderModal();
+    } else if (modal.buttons[modal.index].onCycle
+        && (action === 'confirm' || action === 'left' || action === 'right')) {
+      // Umschalt-Einträge (Anzeigen-Menü): Modal bleibt offen
+      modal.buttons[modal.index].onCycle(action === 'left' ? -1 : 1);
       renderModal();
     } else if (action === 'confirm') {
       const selected = modal.buttons[modal.index];
@@ -146,6 +174,9 @@
   function show(name) {
     screen = name;
     SCREENS.forEach((s) => { $('screen-' + s).hidden = s !== name; });
+    // Turnierinfo in der Statuszeile nur auf der Spielanzeige
+    if (name === 'results') resultsPage = 0;
+    if (name !== 'game') $('gameMeta').hidden = true;
     Focus.clear();
     render();
   }
@@ -698,6 +729,11 @@
   function renderGameScreen() {
     const running = lastGame && lastGame.gameState !== 'UNDEFINED';
     $('gameArea').hidden = !running;
+    $('gameMeta').hidden = !running;
+    if (!running) {
+      $('finishHint').hidden = true;
+      $('displayRow').hidden = true;
+    }
     $('gameLobbyWait').hidden = running;
     if (!running) {
       const players = appState?.lobby || [];
@@ -715,6 +751,7 @@
       renderGallery(lastGame);
       renderCricket(lastGame);
       renderGameMeta(lastGame);
+      renderDisplays(lastGame);
     }
     // Aktionsleiste ist fokussierbar/klickbar, damit auch Maus/Tastatur-
     // emulierte Controller (Steam-Desktop-Konfiguration) das Spiel bedienen
@@ -728,6 +765,27 @@
     legend([
       ['◀▶/Ⓐ', 'Aktion wählen'], ['Ⓧ', 'Daneben'], ['Ⓨ', 'Wandtreffer'], ['☰/F', 'Spielmenü']
     ]);
+  }
+
+  /* Spielmenü → Anzeigen: Finish-Hilfe, Blitztabelle, Trefferbild */
+  function renderDisplays(data) {
+    const options = Displays.get();
+    const hint = Checkout.hintFor(data, options.finish);
+    $('finishHint').hidden = hint === null;
+    $('finishHint').textContent = hint ? 'Finish: ' + hint : '';
+
+    $('rankingPanel').hidden = !options.ranking;
+    $('heatmapPanel').hidden = !options.heatmap;
+    $('displayRow').hidden = !options.ranking && !options.heatmap;
+    // Sichtbarkeit: Einblendungen dezenter, Kacheln bleiben voll sichtbar
+    $('finishHint').style.opacity = options.opacity / 100;
+    $('displayRow').style.opacity = options.opacity / 100;
+    if (options.heatmap) {
+      Heatmap.render($('heatmapPanel'), data.currentPlayer);
+    }
+    if (options.ranking) {
+      Ranking.render($('rankingPanel'), data);
+    }
   }
 
   function renderGameMeta(data) {
@@ -896,6 +954,7 @@
         break;
       case 'menu': {
         const buttons = [{ label: 'Weiter spielen' }];
+        buttons.push({ label: 'Anzeigen', onSelect: openDisplaysMenu });
         if ((appState?.boards?.connected || []).length > 0) {
           buttons.push({ label: 'Dartboard neu verbinden', onSelect: reconnectBoards });
         }
@@ -912,6 +971,23 @@
         break;
       }
     }
+  }
+
+  function openDisplaysMenu() {
+    const x01 = !lastGame || lastGame.gameMode !== 'CRICKET';
+    const buttons = Displays.entries(x01).map((entry) => ({
+      label: entry.label,
+      value: entry.value,
+      onCycle: (dir) => {
+        Displays.cycle(entry.key, dir);
+        // nur bei laufendem Spiel einblenden, nicht auf „Kein Spiel aktiv“
+        if (lastGame && !$('gameArea').hidden) {
+          renderDisplays(lastGame);
+        }
+      }
+    }));
+    buttons.push({ label: 'Fertig' });
+    openModal('Anzeigen', buttons);
   }
 
   /* Zombie-Verbindung („verbunden", aber keine Würfe): Verbindung zu allen
@@ -977,15 +1053,20 @@
   // ################### RESULTS ###################
 
   function renderResults() {
+    const ids = Results.gameIds(resultsLog);
+    resultsPage = Math.min(resultsPage, ids.length);
     const box = $('resultsRanking');
-    const games = appState?.lastResults || [];
-    if (games.length === 0) {
+    const gap = Results.complete(resultsLog)
+      ? '' : '<p class="hint">Unvollständig: dieser TV hat nicht alle Spiele gesehen.</p>';
+    if (ids.length === 0) {
+      $('resultsTitle').textContent = 'Ergebnis';
       box.innerHTML = '<p class="hint">Keine Ergebnisse vorhanden.</p>';
+    } else if (resultsPage === 0) {
+      $('resultsTitle').textContent = 'Turnierergebnis';
+      box.innerHTML = gap + resultsOverview();
     } else {
-      box.innerHTML = games.map((ranking, i) =>
-        '<h2>Spiel ' + (i + 1) + '</h2><ol>'
-        + ranking.map((name) => '<li>' + escapeHtml(name) + '</li>').join('')
-        + '</ol>').join('');
+      $('resultsTitle').textContent = 'Spiel ' + ids[resultsPage - 1] + ' von ' + resultsLog.anzahlSpiele;
+      box.innerHTML = gap + resultsGameTable(ids[resultsPage - 1]);
     }
 
     const list = $('resultsList');
@@ -994,8 +1075,51 @@
     list.appendChild(item('Zur Lobby', 'lobby', { action: 'lobby' }));
     list.appendChild(item('Hauptmenü', 'menu', { action: 'menu' }));
 
-    Focus.set([...list.children], { onConfirm: resultsSelect });
-    legend([['Ⓐ', 'Auswählen']]);
+    Focus.set([...list.children], {
+      onConfirm: resultsSelect,
+      onLeft: () => resultsTurn(-1),
+      onRight: () => resultsTurn(1)
+    });
+    legend(ids.length > 0 ? [['◀▶', 'Seite'], ['Ⓐ', 'Auswählen']] : [['Ⓐ', 'Auswählen']]);
+  }
+
+  // ◀▶ blättert: Übersicht → Spiele (ohne Umlauf)
+  function resultsTurn(dir) {
+    const pages = Results.gameIds(resultsLog).length + 1;
+    const next = Math.max(0, Math.min(pages - 1, resultsPage + dir));
+    if (next !== resultsPage) {
+      resultsPage = next;
+      renderResults();
+    }
+  }
+
+  /* Übersicht: finale Blitztabelle (große Kachel) + Achievement-Kacheln */
+  function resultsOverview() {
+    const standings = Results.standings(resultsLog);
+    const max = Math.max(1, ...standings.map((row) => row.total));
+    const ranking = '<section class="results-tile results-ranking">'
+      + '<h2 class="panel-title">Turnier Blitztabelle</h2><table class="ranking-table"><tbody>'
+      + standings.map((row) => '<tr><td class="ranking-name">' + escapeHtml(row.name) + '</td>'
+        + '<td class="ranking-sum">' + Results.formatValue(row.total, resultsLog) + '</td>'
+        + '<td class="ranking-bar"><span class="bar-booked" style="width:' + (100 * row.total / max) + '%"></span></td></tr>')
+        .join('')
+      + '</tbody></table></section>';
+    const tiles = Results.achievements(resultsLog).map((tile) =>
+      '<section class="results-tile achievement"><h2 class="panel-title">' + tile.title + '</h2>'
+      + '<div class="achievement-best">' + escapeHtml(tile.best) + '</div>'
+      + (tile.worst ? '<div class="achievement-worst">' + escapeHtml(tile.worst) + '</div>' : '')
+      + '</section>').join('');
+    return '<div class="results-grid">' + ranking + tiles + '</div>';
+  }
+
+  /* Seite pro Spiel: Pos | Spieler | Spiel | Turnier (laufende Summe) */
+  function resultsGameTable(spielId) {
+    return '<table class="results-table"><thead><tr><th>Pos</th><th>Spieler</th><th>Spiel</th><th>Turnier</th></tr></thead><tbody>'
+      + Results.gameTable(resultsLog, spielId).map((row) =>
+        '<tr><td>' + row.platz + '</td><td>' + escapeHtml(row.name) + '</td>'
+        + '<td>' + Results.formatValue(row.spiel, resultsLog) + '</td>'
+        + '<td>' + Results.formatValue(row.turnier, resultsLog) + '</td></tr>').join('')
+      + '</tbody></table>';
   }
 
   async function resultsSelect(el) {
@@ -1120,6 +1244,11 @@
   // ################### Start ###################
 
   Api.onGameUpdate((data) => {
+    const recorded = Results.record(resultsLog, data);
+    if (recorded !== resultsLog) {
+      resultsLog = recorded;
+      saveResultsLog();
+    }
     lastGame = data;
     if (screen === 'game') {
       renderGameScreen();

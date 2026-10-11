@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "description": "status/gameUpdate Nachricht der Dart-Server (anthrax + onion). Basisfelder sind X01; gameMode/modeData sind optionale Erweiterungen des onion-servers (fehlen sie, gilt X01 wie bei anthrax).",
+  "description": "status/gameUpdate Nachricht der Dart-Server (anthrax + onion). Basisfelder sind X01; gameMode/modeData, spieler.platzProjektion/strafpunkteProjektion und statistik.summePlatzierungen sind optionale Erweiterungen des onion-servers (fehlen sie, gilt X01 wie bei anthrax).",
   "type": "object",
   "definitions": {
     "statistik": {
@@ -76,6 +76,10 @@
               "type": "integer"
             }
           }
+        },
+        "summePlatzierungen": {
+          "type": "integer",
+          "description": "optional (onion-server): Summe der Endplätze aller beendeten Spiele des Turniers (Platz 1 = 1, ...), unabhängig von den Hausregeln"
         }
       },
       "required": [
@@ -117,6 +121,14 @@
         "freieWuerfe": {
           "type": "integer",
           "description": "verbleibende Darts im aktuellen Spielzug (nur beim Spieler am Zug > 0)"
+        },
+        "platzProjektion": {
+          "type": "integer",
+          "description": "optional (onion-server): Platz, falls das laufende Spiel jetzt endete (1 = vorn); 0 wenn das Spiel beendet ist (dann in statistik.summePlatzierungen gebucht)"
+        },
+        "strafpunkteProjektion": {
+          "type": "integer",
+          "description": "optional (onion-server): prognostizierte Platzierungsstrafpunkte, falls das laufende Spiel jetzt endete (= platzProjektion); 0 wenn die Platzierungsstrafe aus ist oder das Spiel beendet ist (dann bereits in statistik.anzStrafpunkte gebucht)"
         },
         "statistik": {
           "$ref": "#/definitions/statistik"
@@ -177,11 +189,11 @@
     },
     "gameMode": {
       "type": "string",
-      "description": "optional (onion-server): Spielmodus, z.B. X01 oder CRICKET; fehlt das Feld, gilt X01"
+      "description": "optional (onion-server, immer gesendet): Spielmodus X01 oder CRICKET; fehlt das Feld (anthrax), gilt X01"
     },
     "modeData": {
       "type": "object",
-      "description": "optional (onion-server): modusspezifische Zusatzdaten als String-Map. Cricket: marks:<Spielername>:<Feld 15-20|25> = Anzahl Marks 0-3",
+      "description": "optional (onion-server, immer gesendet): modusspezifische Zusatzdaten als String-Map. X01: startScore, doubleIn, doubleOut (\"true\"/\"false\"). Cricket: marks:<Spielername>:<Feld 15-20|25> = Anzahl Marks 0-3",
       "additionalProperties": {
         "type": "string"
       }

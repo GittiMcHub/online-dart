@@ -9,12 +9,15 @@
 </head>
 
 <body>
-  <!-- Statuszeile oben: Broker / Boards / Phase -->
+  <!-- Statuszeile oben: links Server/Broker/Boards/Phase, rechts Turnierinfo -->
   <header id="statusBar">
-    <span id="statusServer"></span>
-    <span id="statusBroker"></span>
-    <span id="statusBoards"></span>
-    <span id="statusPhase"></span>
+    <div id="statusServerInfo">
+      <span id="statusServer"></span>
+      <span id="statusBroker"></span>
+      <span id="statusBoards"></span>
+      <span id="statusPhase"></span>
+    </div>
+    <span id="gameMeta" hidden></span>
   </header>
 
   <!-- ################### SCREENS ################### -->
@@ -83,10 +86,10 @@
       <ul id="gameLobbyPlayers"></ul>
     </div>
     <div id="gameArea" hidden>
-      <div id="gameMeta"></div>
       <div id="galleryViewport">
         <div id="galleryTrack"></div>
       </div>
+      <div id="finishHint" hidden></div>
       <div id="cricketBoard" hidden>
         <table id="cricketTable"></table>
       </div>
@@ -100,10 +103,15 @@
       <button class="tv-item" data-focus-id="g-wall" data-game="wall">Wandtreffer</button>
       <button class="tv-item" data-focus-id="g-menu" data-game="menu">Spielmenü</button>
     </div>
+    <!-- Anzeigen (Spielmenü → Anzeigen): Blitztabelle links, Trefferbild rechts -->
+    <div id="displayRow" hidden>
+      <section id="rankingPanel" hidden></section>
+      <section id="heatmapPanel" hidden></section>
+    </div>
   </main>
 
   <main id="screen-results" class="screen" hidden>
-    <h1>Ergebnis</h1>
+    <h1 id="resultsTitle">Ergebnis</h1>
     <div id="resultsRanking"></div>
     <div id="resultsList" class="menu-list"></div>
   </main>
@@ -147,6 +155,11 @@
   <script src="js/focus.js"></script>
   <script src="js/api.js"></script>
   <script src="js/osk.js"></script>
+  <script src="js/checkout.js"></script>
+  <script src="js/displays.js"></script>
+  <script src="js/heatmap.js"></script>
+  <script src="js/ranking.js"></script>
+  <script src="js/results.js"></script>
   <script src="js/app.js"></script>
 </body>
 
