@@ -72,6 +72,20 @@
                 <label>Dartboard-ID <input type="number" id="playerBoardId" value="1" min="0" required></label>
                 <button type="submit">Spieler hinzufügen</button>
             </form>
+            <form id="addBotForm" class="row">
+                <label>Bot-Stärke
+                    <select id="botPreset">
+                        <option value="25">Easy (Ø 25)</option>
+                        <option value="40" selected>Normal (Ø 40)</option>
+                        <option value="60">Hard (Ø 60)</option>
+                        <option value="85">Pro (Ø 85)</option>
+                        <option value="custom">Eigene…</option>
+                    </select>
+                </label>
+                <label id="botAverageLabel" hidden>Ø <input type="number" id="botAverage" value="40" min="0" max="180" step="5"></label>
+                <label>Name <input type="text" id="botName" placeholder="Bot (Ø 40)"></label>
+                <button type="submit">Bot hinzufügen</button>
+            </form>
             <ul id="playerList"></ul>
         </div>
     </section>

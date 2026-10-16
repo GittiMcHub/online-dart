@@ -8,6 +8,7 @@ import it.tobaben.dart.application.port.GameUpdatePublisherPort;
 import it.tobaben.dart.application.port.SoundPublisherPort;
 import it.tobaben.dart.common.Player;
 import it.tobaben.dart.game.board.Segment;
+import it.tobaben.dart.game.bot.BotProfile;
 import it.tobaben.dart.game.cricket.CricketGame;
 import it.tobaben.dart.game.x01.X01Game;
 import org.junit.jupiter.api.Test;
@@ -178,5 +179,20 @@ class AnthraxJsonMapperTest {
         assertEquals(2, bob.get("strafpunkteProjektion").getAsInt());
         assertEquals(1, root.getAsJsonObject("currentPlayer").get("platzProjektion").getAsInt());
         assertEquals(0, alice.getAsJsonObject("statistik").get("summePlatzierungen").getAsInt());
+    }
+
+    @Test
+    void botPlayersAreFlagged() {
+        CapturingPorts ports = new CapturingPorts();
+        RegisteredPlayer human = new RegisteredPlayer(0, new Player("Alice"), 1);
+        RegisteredPlayer bot = new RegisteredPlayer(1, new Player("Bot (Ø 40)"), 900, new BotProfile(40));
+        GameEngine engine = new GameEngine(new X01Game(301, false, false),
+                List.of(human, bot), 1, 1, 0, HouseRules.allOff(), ports, ports);
+        engine.start();
+
+        JsonObject root = JsonParser.parseString(AnthraxJsonMapper.toJson(ports.lastUpdate())).getAsJsonObject();
+        JsonArray order = root.getAsJsonArray("spielerReihenfolge");
+        assertFalse(order.get(0).getAsJsonObject().has("bot"));
+        assertTrue(order.get(1).getAsJsonObject().get("bot").getAsBoolean());
     }
 }

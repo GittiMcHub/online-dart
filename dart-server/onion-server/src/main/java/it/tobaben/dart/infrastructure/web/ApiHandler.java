@@ -49,6 +49,8 @@ public class ApiHandler implements HttpHandler {
                 respondResult(exchange, this.context.getSession().closeLobby());
             } else if ("POST /api/lobby/players".equals(route)) {
                 handleAddPlayer(exchange);
+            } else if ("POST /api/lobby/bots".equals(route)) {
+                handleAddBot(exchange);
             } else if (exchange.getRequestMethod().equals("POST")
                     && exchange.getRequestURI().getPath().startsWith("/api/lobby/players/")
                     && exchange.getRequestURI().getPath().endsWith("/move")) {
@@ -104,6 +106,16 @@ public class ApiHandler implements HttpHandler {
         int dartboardId = intOr(body, "dartboardId", -1);
         respondResult(exchange, this.context.getSession()
                 .joinLobby(name, dartboardId, LobbyPlayer.LOCAL_CLIENT_ID));
+    }
+
+    /** POST /api/lobby/bots mit {"name"?: "...", "average": 0–180} */
+    private void handleAddBot(HttpExchange exchange) throws IOException {
+        if (!requireBroker(exchange)) {
+            return;
+        }
+        JsonObject body = readBody(exchange);
+        respondResult(exchange, this.context.getSession()
+                .addBot(stringOr(body, "name", null), intOr(body, "average", -1)));
     }
 
     /** POST /api/lobby/players/{name}/move mit {"offset": -1|1} */

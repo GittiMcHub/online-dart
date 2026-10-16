@@ -7,6 +7,7 @@ import it.tobaben.dart.application.client.LobbyStateView;
 import it.tobaben.dart.application.lobby.LobbyPlayer;
 import it.tobaben.dart.application.session.ServerSession;
 import it.tobaben.dart.application.session.TournamentConfig;
+import it.tobaben.dart.game.bot.BotProfile;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +34,10 @@ public final class LobbyJson {
             entry.addProperty("dartboardId", player.dartboardId());
             entry.addProperty("clientId", player.clientId());
             entry.addProperty("local", player.isLocal());
+            if (player.isBot()) {
+                entry.addProperty("bot", true);
+                entry.addProperty("average", player.bot().average());
+            }
             players.add(entry);
         }
         root.add("players", players);
@@ -57,7 +62,8 @@ public final class LobbyJson {
                 players.add(new LobbyPlayer(
                         entry.get("name").getAsString(),
                         entry.get("dartboardId").getAsInt(),
-                        entry.get("clientId").getAsString()));
+                        entry.get("clientId").getAsString(),
+                        entry.has("average") ? new BotProfile(entry.get("average").getAsInt()) : null));
             });
         }
         return new LobbyStateView(
