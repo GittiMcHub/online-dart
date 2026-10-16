@@ -188,6 +188,14 @@ public class CricketGame implements DartLikeGame {
     }
 
     @Override
+    public List<Player> getProjectedRanking() {
+        if (this.scoreboard == null) {
+            return List.copyOf(this.players);
+        }
+        return this.scoreboard.getProjectedRanking();
+    }
+
+    @Override
     public Player getCurrentPlayer() {
         return this.currentPlayer;
     }

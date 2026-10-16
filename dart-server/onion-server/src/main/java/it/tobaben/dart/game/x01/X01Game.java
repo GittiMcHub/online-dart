@@ -246,6 +246,18 @@ public class X01Game implements DartLikeGame {
     }
 
     @Override
+    public List<Player> getProjectedRanking() {
+        List<Player> projected = new ArrayList<>(getRanking());
+        Map<Player, Integer> scores = getSnapshot().scores();
+        // stable sort: equal scores keep the turn order
+        this.players.stream()
+                .filter(player -> !projected.contains(player))
+                .sorted(Comparator.comparingInt(scores::get))
+                .forEach(projected::add);
+        return projected;
+    }
+
+    @Override
     public Player getCurrentPlayer() {
         return this.currentPlayer;
     }

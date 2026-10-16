@@ -52,6 +52,17 @@ body {
   align-items: center;
 }
 
+#statusServerInfo {
+  display: flex;
+  gap: 2vw;
+}
+
+/* Turnierinfo rechtsbündig */
+#gameMeta {
+  margin-left: auto;
+  text-align: right;
+}
+
 #statusBar .ok { color: var(--ok); }
 #statusBar .warn { color: var(--warn); }
 
@@ -154,12 +165,8 @@ body {
 
 .game-screen {
   padding: 2vh 2vw;
-}
-
-#gameMeta {
-  color: var(--muted);
-  font-size: 0.7em;
-  margin-bottom: 1vh;
+  display: flex;
+  flex-direction: column;
 }
 
 #gameLobbyWait h1 { margin-bottom: 2vh; }
@@ -170,7 +177,7 @@ body {
 #galleryViewport {
   overflow: hidden;
   width: 100%;
-  padding: 2vh 0 3vh 0;
+  padding: 1vh 0;
 }
 
 #galleryTrack {
@@ -184,7 +191,7 @@ body {
 
 .tile {
   width: 15vw;
-  height: 17vh;
+  height: 100%;
   background: var(--panel);
   color: var(--text);
   border: 0.15vw solid #2a3040;
@@ -204,7 +211,7 @@ body {
 
 .tile.active {
   width: 30vw;
-  height: 34vh;
+  height: 100%;
   background: #fff;
   color: #000;
 }
@@ -269,11 +276,146 @@ body {
   color: var(--muted);
 }
 
+/* Finish-Hilfe zwischen aktiver Kachel und Aktionsleiste */
+#finishHint {
+  text-align: center;
+  font-size: 1.4em;
+  font-weight: bold;
+  color: var(--accent);
+  margin-top: 1vh;
+  /* Höhe auch ohne Text reservieren, damit die Buttons nicht springen */
+  min-height: 1.3em;
+}
+
+/* Anzeigen-Zeile unter der Aktionsleiste: Blitztabelle links, Trefferbild
+   rechts; ist nur eines aktiv, steht es mittig */
+#displayRow {
+  display: flex;
+  justify-content: center;
+  gap: 2vw;
+  /* nimmt den Rest der Höhe (Cricket-Tabelle braucht mehr Platz als X01) */
+  flex: 1 1 0;
+  min-height: 15vh;
+  margin-top: 2vh;
+}
+
+#displayRow > section {
+  flex: 0 1 45%;
+  min-width: 0;
+  background: var(--panel);
+  border-radius: 0.8vw;
+  padding: 1.5vh 1.5vw;
+  overflow: hidden;
+}
+
+#heatmapPanel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.heatmap-board {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+
+.heatmap-board path,
+.heatmap-board circle {
+  stroke: #9aa4b5;
+  stroke-width: 0.8;
+}
+
+.heatmap-number {
+  fill: var(--muted);
+  font-size: 18px;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+/* Titel der Anzeigen-Panels (Blitztabelle, Trefferbild) */
+.panel-title {
+  font-size: 0.8em;
+  margin-bottom: 0.8vh;
+  text-align: center;
+  width: 100%;
+}
+
+.ranking-legend {
+  display: flex;
+  justify-content: center;
+  gap: 2vw;
+  margin-top: 1vh;
+  font-size: 0.55em;
+  color: var(--muted);
+}
+
+.ranking-legend .legend-swatch {
+  display: inline-block;
+  width: 1.2em;
+  height: 0.8em;
+  margin-right: 0.4em;
+  vertical-align: middle;
+}
+
+.heatmap-caption {
+  font-size: 0.6em;
+  color: var(--muted);
+}
+
+.ranking-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75em;
+}
+
+.ranking-table th {
+  color: var(--muted);
+  text-align: left;
+  font-weight: normal;
+}
+
+.ranking-table td {
+  padding: 0.6vh 0.6vw;
+  vertical-align: middle;
+}
+
+.ranking-table tr.active-player {
+  color: var(--accent);
+  font-weight: bold;
+  background-color: #00000061;
+  border: 3px solid black;
+}
+
+.ranking-sum {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.ranking-euro {
+  font-size: 0.7em;
+  color: var(--muted);
+}
+
+.ranking-bar {
+  width: 50%;
+  white-space: nowrap;
+}
+
+.ranking-bar span {
+  display: inline-block;
+  height: 2.2vh;
+}
+
+.bar-booked { background: var(--warn); }
+.bar-projected { background: var(--warn); opacity: 0.35; }
+
 /* Aktionsleiste unten auf der Spielanzeige */
 .game-buttons {
   display: flex;
   gap: 1.5vw;
   margin-top: 2vh;
+  justify-content: center;
 }
 
 .game-buttons .tv-item {
@@ -392,4 +534,69 @@ body {
   color: var(--text);
   font-weight: bold;
   margin-right: 0.4em;
+}
+
+/* ################### Turnierergebnis ################### */
+
+/* große Blitztabelle links über drei Reihen, Achievements rechts */
+.results-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  grid-template-rows: repeat(3, 1fr);
+  gap: 1.5vw;
+  height: 48vh;
+  margin-bottom: 3vh;
+}
+
+.results-tile {
+  background: var(--panel);
+  border-radius: 0.8vw;
+  padding: 1.5vh 1.5vw;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.results-ranking {
+  grid-row: 1 / span 3;
+  justify-content: flex-start;
+}
+
+.achievement {
+  text-align: center;
+}
+
+.achievement-best {
+  font-weight: bold;
+  color: var(--accent);
+}
+
+.achievement-worst {
+  font-size: 0.6em;
+  color: var(--muted);
+  margin-top: 0.6vh;
+}
+
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 3vh;
+}
+
+.results-table th {
+  color: var(--muted);
+  font-weight: normal;
+  text-align: left;
+  padding: 1vh 1vw;
+}
+
+.results-table td {
+  padding: 1vh 1vw;
+  border-top: 1px solid #2a3040;
+}
+
+.results-table th:nth-child(n+3),
+.results-table td:nth-child(n+3) {
+  text-align: right;
 }

@@ -34,6 +34,9 @@ public final class EmbeddedBroker {
         }
     }
 
+    // generous for a LAN broker: a gameUpdate is ~1 KB per player object
+    static final int MAX_MESSAGE_BYTES = 1024 * 1024;
+
     // a Moquette Server cannot be started again after stopServer(), so the
     // instance is created fresh on every start() (broker restart via web UI)
     private Server server;
@@ -59,6 +62,10 @@ public final class EmbeddedBroker {
         properties.setProperty(IConfig.PERSISTENCE_ENABLED_PROPERTY_NAME, "false");
         // no phoning home, and no data/.moquette_uuid file in the working dir
         properties.setProperty(IConfig.ENABLE_TELEMETRY_NAME, "false");
+        // gameUpdates grow with players and finished players (statistik per
+        // Spieler); Moquette's 8092-byte default made the broker drop the
+        // server connection and every further update
+        properties.setProperty(IConfig.NETTY_MAX_BYTES_PROPERTY_NAME, String.valueOf(MAX_MESSAGE_BYTES));
         starting.startServer(new MemoryConfig(properties), List.of(), null,
                 singleUserAuthenticator(), null);
         this.server = starting;

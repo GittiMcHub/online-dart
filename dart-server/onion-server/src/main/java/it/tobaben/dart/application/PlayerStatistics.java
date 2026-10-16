@@ -24,6 +24,9 @@ public class PlayerStatistics {
     private float avgSpiel = 0.0f;
     private float avgTurnier = 0.0f;
     private int anzStrafpunkte = 0;
+    // sum of final places (1 = winner) over all finished games, independent of
+    // the house rules — tournament ranking when penalty points cost nothing
+    private int summePlatzierungen = 0;
     private int anzRandTreffer = 0;
     private int anzWandTreffer = 0;
     private int anzBull = 0;
@@ -81,6 +84,10 @@ public class PlayerStatistics {
 
     public void addStrafpunkte(int anzahl) {
         this.anzStrafpunkte += anzahl;
+    }
+
+    public void addPlatzierung(int place) {
+        this.summePlatzierungen += place;
     }
 
     /** Called at the end of every turn with the sum thrown in that turn. */

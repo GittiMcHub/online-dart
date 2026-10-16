@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -255,5 +256,54 @@ class GameEngineTest {
         assertEquals(EngineState.WAITING, engine.getState());
         assertEquals(0, player1.statistics().getAnzStrafpunkte());
         assertEquals(1, player1.statistics().getAnzWandTreffer()); // counted, not fined
+    }
+
+    @Test
+    void projectionsShouldFollowCurrentStandings() {
+        GameEngine engine = startedEngine(301);
+        // nobody has thrown: turn order
+        assertEquals(Map.of(0, 1, 1, 2), ports.lastUpdate().projectedPlaces());
+        assertEquals(Map.of(0, 1, 1, 2), ports.lastUpdate().projectedPenalties());
+
+        engine.handle(DartboardInput.ofThrow(1, Segment.SINGLE_1));
+        engine.handle(DartboardInput.next(1));  // P1 300, WAITING
+        engine.handle(DartboardInput.next(2));  // P2's turn
+        engine.handle(DartboardInput.ofThrow(2, Segment.TRIPLE_20)); // P2 241
+        assertEquals(Map.of(0, 2, 1, 1), ports.lastUpdate().projectedPlaces());
+        assertEquals(Map.of(0, 2, 1, 1), ports.lastUpdate().projectedPenalties());
+    }
+
+    @Test
+    void placesAreProjectedEvenWithoutPlacementRule() {
+        GameEngine engine = new GameEngine(
+                new X01Game(301, false, false), List.of(player1, player2),
+                1, 1, 10, new HouseRules(true, true, false), ports, ports);
+        engine.start();
+        assertEquals(Map.of(0, 1, 1, 2), ports.lastUpdate().projectedPlaces());
+        assertTrue(ports.lastUpdate().projectedPenalties().isEmpty());
+    }
+
+    @Test
+    void projectionsShouldBeEmptyOnceGameIsFinished() {
+        GameEngine engine = startedEngine(40);
+        engine.handle(DartboardInput.ofThrow(1, Segment.SINGLE_20));
+        engine.handle(DartboardInput.ofThrow(1, Segment.SINGLE_20)); // win, booked
+        assertEquals(EngineState.FINISHED, engine.getState());
+        assertTrue(ports.lastUpdate().projectedPlaces().isEmpty());
+        assertTrue(ports.lastUpdate().projectedPenalties().isEmpty());
+    }
+
+    @Test
+    void placementSumIsBookedRegardlessOfHouseRules() {
+        GameEngine engine = new GameEngine(
+                new X01Game(40, false, false), List.of(player1, player2),
+                1, 1, 0, HouseRules.allOff(), ports, ports);
+        engine.start();
+        engine.handle(DartboardInput.ofThrow(1, Segment.SINGLE_20));
+        engine.handle(DartboardInput.ofThrow(1, Segment.SINGLE_20)); // P1 wins
+        assertEquals(1, player1.statistics().getSummePlatzierungen());
+        assertEquals(2, player2.statistics().getSummePlatzierungen());
+        assertEquals(0, player1.statistics().getAnzStrafpunkte());
+        assertEquals(0, player2.statistics().getAnzStrafpunkte());
     }
 }

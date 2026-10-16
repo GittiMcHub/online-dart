@@ -83,4 +83,14 @@ class PlayerStatisticsTest {
         assertEquals(60, statistics.getSummeTurnier());
         assertEquals(1, statistics.getAnzTripleFeld());
     }
+
+    @Test
+    void placementsShouldBeSummedAndSurviveGameReset() {
+        PlayerStatistics statistics = new PlayerStatistics();
+        statistics.addPlatzierung(2);
+        statistics.resetGameData();
+        statistics.addPlatzierung(1);
+        assertEquals(3, statistics.getSummePlatzierungen());
+        assertEquals(0, statistics.getAnzStrafpunkte()); // independent of penalties
+    }
 }

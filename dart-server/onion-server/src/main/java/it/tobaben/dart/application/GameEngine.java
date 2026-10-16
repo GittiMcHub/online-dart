@@ -181,9 +181,10 @@ public class GameEngine {
             statistics.addStrafpunkte(1);
         }
         if (gameOver) {
-            if (this.houseRules.placementPenalty()) {
-                List<RegisteredPlayer> ranking = getRanking();
-                for (int place = 0; place < ranking.size(); place++) {
+            List<RegisteredPlayer> ranking = getRanking();
+            for (int place = 0; place < ranking.size(); place++) {
+                ranking.get(place).statistics().addPlatzierung(place + 1);
+                if (this.houseRules.placementPenalty()) {
                     ranking.get(place).statistics().addStrafpunkte(place + 1);
                 }
             }
@@ -242,6 +243,7 @@ public class GameEngine {
     }
 
     private void publish() {
+        Map<Integer, Integer> places = projectedPlaces();
         this.updatePublisher.publish(new EngineUpdate(
                 this.gameId,
                 this.totalGames,
@@ -253,8 +255,23 @@ public class GameEngine {
                 this.lastThrowValue,
                 this.turnSum,
                 this.playersInOrder,
-                getRanking()
+                getRanking(),
+                places,
+                this.houseRules.placementPenalty() ? places : Map.of()
         ));
+    }
+
+    private Map<Integer, Integer> projectedPlaces() {
+        if (this.state == EngineState.FINISHED) {
+            // final places are already booked into the statistics
+            return Map.of();
+        }
+        Map<Integer, Integer> places = new HashMap<>();
+        List<Player> projected = this.game.getProjectedRanking();
+        for (int place = 0; place < projected.size(); place++) {
+            places.put(this.byPlayer.get(projected.get(place)).id(), place + 1);
+        }
+        return places;
     }
 
     public List<RegisteredPlayer> getRanking() {
