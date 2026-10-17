@@ -76,6 +76,29 @@ $('addPlayerForm').addEventListener('submit', async (event) => {
     setStatus('tournamentStatus', result);
 });
 
+function botAverage() {
+    const preset = $('botPreset').value;
+    return preset === 'custom' ? Number($('botAverage').value) : Number(preset);
+}
+
+$('botPreset').addEventListener('change', () => {
+    $('botAverageLabel').hidden = $('botPreset').value !== 'custom';
+    $('botName').placeholder = 'Bot (Ø ' + botAverage() + ')';
+});
+
+$('botAverage').addEventListener('input', () => {
+    $('botName').placeholder = 'Bot (Ø ' + botAverage() + ')';
+});
+
+$('addBotForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const result = await post('/api/lobby/bots', { name: $('botName').value, average: botAverage() });
+    if (result.ok) {
+        $('botName').value = '';
+    }
+    setStatus('tournamentStatus', result);
+});
+
 async function removePlayer(name) {
     setStatus('tournamentStatus', await del('/api/lobby/players/' + encodeURIComponent(name)));
 }
@@ -266,7 +289,9 @@ function render(state) {
     state.lobby.forEach((player) => {
         const li = document.createElement('li');
         const label = document.createElement('span');
-        label.textContent = player.name + ' – Board ' + player.dartboardId;
+        label.textContent = player.bot
+            ? player.name + ' – Bot Ø ' + player.average
+            : player.name + ' – Board ' + player.dartboardId;
         li.appendChild(label);
         if (!player.local) {
             const remote = document.createElement('span');

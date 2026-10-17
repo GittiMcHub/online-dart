@@ -130,4 +130,9 @@ class BoardServiceTest {
         assertTrue(connection.closed);
         assertTrue(service.getBoards().isEmpty());
     }
+
+    @Test
+    void connectRejectsBotBoardIds() {
+        assertFalse(service.connect("CC:33:31:C1:27:A3", 900).ok());
+    }
 }

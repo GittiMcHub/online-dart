@@ -1,5 +1,6 @@
 package it.tobaben.dart.application.lobby;
 
+import it.tobaben.dart.game.bot.BotProfile;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -105,5 +106,40 @@ class LobbyServiceTest {
     @Test
     void moveShouldFailForUnknownPlayer() {
         assertFalse(lobby.move("Nobody", 1).ok());
+    }
+
+    @Test
+    void addBotAssignsFreeBotBoardIds() {
+        LobbyService lobby = new LobbyService();
+        assertTrue(lobby.addBot("Bot A", new BotProfile(40)).ok());
+        assertTrue(lobby.addBot("Bot B", new BotProfile(60)).ok());
+        assertEquals(900, lobby.getPlayers().get(0).dartboardId());
+        assertEquals(901, lobby.getPlayers().get(1).dartboardId());
+        assertTrue(lobby.getPlayers().get(0).isBot());
+        assertTrue(lobby.getPlayers().get(0).isLocal());
+    }
+
+    @Test
+    void botBoardIdsAreReservedForBots() {
+        LobbyService lobby = new LobbyService();
+        assertFalse(lobby.join("Alice", 900, "local").ok());
+        assertFalse(lobby.join("Alice", 999, "client-a").ok());
+        assertTrue(lobby.join("Alice", 899, "local").ok());
+    }
+
+    @Test
+    void joinWithBotNameIsRejected() {
+        LobbyService lobby = new LobbyService();
+        lobby.addBot("Bot", new BotProfile(40));
+        assertFalse(lobby.join("Bot", 1, LobbyPlayer.LOCAL_CLIENT_ID).ok());
+        assertTrue(lobby.getPlayers().get(0).isBot());
+        assertEquals(900, lobby.getPlayers().get(0).dartboardId());
+    }
+
+    @Test
+    void addBotRejectsDuplicateNames() {
+        LobbyService lobby = new LobbyService();
+        lobby.join("Alice", 1, "local");
+        assertFalse(lobby.addBot("Alice", new BotProfile(40)).ok());
     }
 }

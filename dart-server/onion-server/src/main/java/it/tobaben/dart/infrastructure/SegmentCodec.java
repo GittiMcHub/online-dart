@@ -54,4 +54,14 @@ public final class SegmentCodec {
                         : Optional.of(DartboardInput.ofThrow(dartboardId, segment));
         }
     }
+
+    /** @return the 3-digit wire code of a segment (inverse of decode for throws) */
+    public static String encode(Segment segment) {
+        return switch (segment) {
+            case WALL_HIT -> "997";
+            case BOARD_HIT -> "998";
+            default -> String.format("%d%02d", segment.getMultiplier(),
+                    segment.getScore() / segment.getMultiplier());
+        };
+    }
 }

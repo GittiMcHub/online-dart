@@ -1,5 +1,7 @@
 package it.tobaben.dart.application.lobby;
 
+import it.tobaben.dart.game.bot.BotProfile;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,10 +29,17 @@ public class LobbyService {
         if (dartboardId < 0) {
             return LobbyResult.failure("Dartboard-ID darf nicht negativ sein");
         }
+        if (LobbyPlayer.isBotBoardId(dartboardId)) {
+            return LobbyResult.failure("Board-IDs " + LobbyPlayer.FIRST_BOT_BOARD_ID + "–"
+                    + LobbyPlayer.LAST_BOT_BOARD_ID + " sind für Bots reserviert");
+        }
         String trimmed = name.trim();
         for (int i = 0; i < this.players.size(); i++) {
             LobbyPlayer existing = this.players.get(i);
             if (existing.name().equals(trimmed)) {
+                if (existing.isBot()) {
+                    return LobbyResult.failure("Spielername '" + trimmed + "' ist bereits an einen Bot vergeben");
+                }
                 if (existing.clientId().equals(clientId)) {
                     this.players.set(i, new LobbyPlayer(trimmed, dartboardId, clientId));
                     return LobbyResult.success();
@@ -93,5 +102,24 @@ public class LobbyService {
 
     public synchronized boolean isEmpty() {
         return this.players.isEmpty();
+    }
+
+    /** Host-side: adds a bot on the next free virtual board (900–999). */
+    public synchronized LobbyResult addBot(String name, BotProfile profile) {
+        if (name == null || name.isBlank()) {
+            return LobbyResult.failure("Spielername darf nicht leer sein");
+        }
+        String trimmed = name.trim();
+        if (this.players.stream().anyMatch(player -> player.name().equals(trimmed))) {
+            return LobbyResult.failure("Spielername '" + trimmed + "' ist bereits vergeben");
+        }
+        for (int id = LobbyPlayer.FIRST_BOT_BOARD_ID; id <= LobbyPlayer.LAST_BOT_BOARD_ID; id++) {
+            int candidate = id;
+            if (this.players.stream().noneMatch(player -> player.dartboardId() == candidate)) {
+                this.players.add(new LobbyPlayer(trimmed, candidate, LobbyPlayer.LOCAL_CLIENT_ID, profile));
+                return LobbyResult.success();
+            }
+        }
+        return LobbyResult.failure("Keine freie Bot-Board-ID mehr");
     }
 }
