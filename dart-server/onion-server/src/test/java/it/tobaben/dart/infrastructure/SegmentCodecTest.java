@@ -72,4 +72,22 @@ class SegmentCodecTest {
         assertEquals(Optional.empty(), SegmentCodec.decode(1, "421"));
         assertEquals(Optional.empty(), SegmentCodec.decode(1, "-99"));
     }
+
+    @Test
+    void encodeIsTheInverseOfDecode() {
+        for (Segment segment : Segment.values()) {
+            assertEquals(Optional.of(DartboardInput.ofThrow(1, segment)),
+                    SegmentCodec.decode(1, SegmentCodec.encode(segment)), segment.name());
+        }
+    }
+
+    @Test
+    void encodeExamples() {
+        assertEquals("320", SegmentCodec.encode(Segment.TRIPLE_20));
+        assertEquals("105", SegmentCodec.encode(Segment.SINGLE_5));
+        assertEquals("125", SegmentCodec.encode(Segment.BULL));
+        assertEquals("225", SegmentCodec.encode(Segment.BULLS_EYE));
+        assertEquals("998", SegmentCodec.encode(Segment.BOARD_HIT));
+        assertEquals("997", SegmentCodec.encode(Segment.WALL_HIT));
+    }
 }

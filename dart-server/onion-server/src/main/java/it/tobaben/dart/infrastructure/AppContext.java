@@ -2,6 +2,9 @@ package it.tobaben.dart.infrastructure;
 
 import it.tobaben.dart.application.DartboardInput;
 import it.tobaben.dart.application.board.BoardService;
+import it.tobaben.dart.application.bot.BotService;
+import it.tobaben.dart.application.bot.BotTiming;
+import it.tobaben.dart.application.bot.ExecutorBotScheduler;
 import it.tobaben.dart.application.client.ClientSession;
 import it.tobaben.dart.application.lobby.LobbyService;
 import it.tobaben.dart.application.session.ServerSession;
@@ -13,6 +16,7 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -37,6 +41,10 @@ public class AppContext {
             SimpleBleScannerAdapter::new,
             SimpleBleBoardConnection::new,
             new MqttThrowForwarder(this::getMqttAdapter));
+    // bots throw on virtual boards 900–999 through the broker, like real boards
+    private final BotService botService = new BotService(
+            new MqttVirtualBoard(new MqttThrowForwarder(this::getMqttAdapter)),
+            BotTiming.DEFAULT, new ExecutorBotScheduler(), new Random());
 
     private EmbeddedBroker embeddedBroker;
     private MqttAdapter mqtt;
@@ -48,7 +56,8 @@ public class AppContext {
     public AppContext(AppConfig config) {
         this.config = config;
         this.embeddedWsPort = config.embeddedBrokerWsPort();
-        this.session = new ServerSession(this.inputQueue, new LobbyService(), this.portBridge, this.portBridge);
+        this.session = new ServerSession(this.inputQueue, new LobbyService(), this.portBridge, this.portBridge,
+                this.botService);
         this.session.addChangeListener(this::fireChange);
         this.clientSession.addChangeListener(this::fireChange);
         this.boardService.addChangeListener(this::fireChange);

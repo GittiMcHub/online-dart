@@ -87,6 +87,9 @@ public final class AnthraxJsonMapper {
         spieler.addProperty("id", registered.id());
         spieler.addProperty("dartboardId", registered.dartboardId());
         spieler.addProperty("name", registered.getName());
+        if (registered.isBot()) {
+            spieler.addProperty("bot", true);
+        }
         Integer score = update.snapshot().scores().get(registered.player());
         spieler.addProperty("punktestand", score == null ? 0 : score);
         // anthrax semantics: only the player at the board has free throws,

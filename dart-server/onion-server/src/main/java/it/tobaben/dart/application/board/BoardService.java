@@ -4,6 +4,7 @@ import it.tobaben.dart.application.board.port.BleUnavailableException;
 import it.tobaben.dart.application.board.port.DartboardConnectionPort;
 import it.tobaben.dart.application.board.port.DartboardScannerPort;
 import it.tobaben.dart.application.board.port.ThrowPublisherPort;
+import it.tobaben.dart.application.lobby.LobbyPlayer;
 import it.tobaben.dart.application.lobby.LobbyResult;
 
 import java.time.Duration;
@@ -122,6 +123,10 @@ public class BoardService {
         }
         if (dartboardId < 0) {
             return LobbyResult.failure("Dartboard-ID darf nicht negativ sein");
+        }
+        if (LobbyPlayer.isBotBoardId(dartboardId)) {
+            return LobbyResult.failure("Board-IDs " + LobbyPlayer.FIRST_BOT_BOARD_ID + "–"
+                    + LobbyPlayer.LAST_BOT_BOARD_ID + " sind für Bots reserviert");
         }
         String name = this.lastScan.stream()
                 .filter(d -> d.mac().equalsIgnoreCase(mac))

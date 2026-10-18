@@ -106,4 +106,10 @@ class WebServerTest {
     void unknownEndpointIs404() throws Exception {
         assertEquals(404, get("/api/nope").statusCode());
     }
+
+    @Test
+    void addingBotsRequiresBroker() throws Exception {
+        assertEquals(200, post("/api/lobby/open", "").statusCode());
+        assertEquals(409, post("/api/lobby/bots", "{\"average\":40}").statusCode());
+    }
 }

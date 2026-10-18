@@ -4,6 +4,10 @@ import it.tobaben.dart.application.DartboardInput;
 import it.tobaben.dart.application.EngineUpdate;
 import it.tobaben.dart.application.HouseRules;
 import it.tobaben.dart.application.Sound;
+import it.tobaben.dart.application.bot.BotService;
+import it.tobaben.dart.application.bot.BotTiming;
+import it.tobaben.dart.application.bot.ExecutorBotScheduler;
+import it.tobaben.dart.application.bot.port.VirtualBoardPort;
 import it.tobaben.dart.application.lobby.LobbyPlayer;
 import it.tobaben.dart.application.lobby.LobbyService;
 import it.tobaben.dart.application.port.GameUpdatePublisherPort;
@@ -12,6 +16,7 @@ import it.tobaben.dart.game.board.Segment;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -151,5 +156,71 @@ class ServerSessionTest {
         assertNotSame(first.get(0).player(), session.getTournamentPlayers().get(0).player());
         session.abortTournament();
         awaitPhase(SessionPhase.IDLE);
+    }
+
+    @Test
+    void addBotOnlyInLobby() {
+        ServerSession withBots = sessionWithBots();
+        assertFalse(withBots.addBot("Bot", 40).ok());
+        withBots.openLobby();
+        assertTrue(withBots.addBot("", 40).ok());
+        LobbyPlayer bot = withBots.getLobby().getPlayers().get(0);
+        assertEquals("Bot (Ø 40)", bot.name());
+        assertEquals(900, bot.dartboardId());
+        assertFalse(withBots.addBot("Zu stark", 181).ok());
+    }
+
+    @Test
+    void defaultBotNamesAreNumberedWhenTaken() {
+        ServerSession withBots = sessionWithBots();
+        withBots.openLobby();
+        assertTrue(withBots.addBot(null, 40).ok());
+        assertTrue(withBots.addBot(null, 40).ok());
+        assertTrue(withBots.addBot("", 40).ok());
+        assertEquals(List.of("Bot (Ø 40)", "Bot 2 (Ø 40)", "Bot 3 (Ø 40)"),
+                withBots.getLobby().getPlayers().stream().map(LobbyPlayer::name).toList());
+    }
+
+    @Test
+    void sessionWithoutBotServiceRejectsBots() {
+        session.openLobby();
+        assertFalse(session.addBot("Bot", 40).ok());
+    }
+
+    @Test
+    void botPlaysATournamentToTheEnd() throws InterruptedException {
+        ServerSession withBots = sessionWithBots();
+        withBots.openLobby();
+        withBots.addBot("Bot", 180);
+        assertTrue(withBots.startTournament(QUICK_GAME).ok()); // start score 1: S1 finishes
+        assertTrue(withBots.getTournamentPlayers().get(0).isBot());
+        awaitPhaseOf(withBots, SessionPhase.IDLE);
+        assertEquals(1, withBots.getLastResults().size());
+    }
+
+    private ServerSession sessionWithBots() {
+        VirtualBoardPort loopback = new VirtualBoardPort() {
+            @Override
+            public void throwDart(int dartboardId, Segment segment) {
+                queue.add(DartboardInput.ofThrow(dartboardId, segment));
+            }
+
+            @Override
+            public void next(int dartboardId) {
+                queue.add(DartboardInput.next(dartboardId));
+            }
+        };
+        BotService bots = new BotService(loopback, BotTiming.INSTANT, new ExecutorBotScheduler(), new Random(1));
+        return new ServerSession(queue, new LobbyService(), ports, ports, bots);
+    }
+
+    private void awaitPhaseOf(ServerSession target, SessionPhase expected) throws InterruptedException {
+        long deadline = System.currentTimeMillis() + 5000;
+        while (target.getPhase() != expected) {
+            if (System.currentTimeMillis() > deadline) {
+                fail("Timeout: Phase " + expected + " nicht erreicht (ist " + target.getPhase() + ")");
+            }
+            Thread.sleep(10);
+        }
     }
 }

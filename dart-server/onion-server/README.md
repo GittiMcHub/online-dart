@@ -102,6 +102,13 @@ sich ein Board teilen, ein Board gehört aber immer nur einem Client; Beitritt
 nur bei geöffneter Lobby. Die Lobby-Aufstellung bleibt über Turniere hinweg
 erhalten.
 
+### Bots
+
+Der Host kann in der Lobby Computergegner hinzufügen (Management-UI „Bot hinzufügen", TV „+ Bot hinzufügen…",
+REST `POST /api/lobby/bots` mit `{"name"?: "...", "average": 0–180}`). Spielstärke = 3-Dart-Average
+(Presets Easy 25, Normal 40, Hard 60, Pro 85), Board-IDs 900–999 sind reserviert, im gameUpdate
+`"bot": true`. Wurfmodell, Kalibrierung, Taktik und Ablauf: [doc/bot.md](../../doc/bot.md).
+
 ### Bluetooth-Dartboards (Client-/Combined-Modus)
 
 Scan und Verbindung laufen direkt in Java über

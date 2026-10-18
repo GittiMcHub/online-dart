@@ -56,6 +56,10 @@ public final class StateJsonMapper {
             entry.addProperty("dartboardId", player.dartboardId());
             entry.addProperty("clientId", player.clientId());
             entry.addProperty("local", player.isLocal());
+            if (player.isBot()) {
+                entry.addProperty("bot", true);
+                entry.addProperty("average", player.bot().average());
+            }
             lobby.add(entry);
         }
         root.add("lobby", lobby);

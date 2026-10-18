@@ -119,6 +119,10 @@
   // Auto-Hochzählen, die ID lässt sich danach mit ◀▶ anpassen
   const DEFAULT_BOARD_ID = 1;
 
+  // Bot-Stärke für "Eigene Stärke" im Bot-Dialog, 5er-Schritte
+  let botAverage = 40;
+  const BOT_PRESETS = [['Easy', 25], ['Normal', 40], ['Hard', 60], ['Pro', 85]];
+
   // ################### Modal ###################
 
   function openModal(text, buttons) {
@@ -520,11 +524,14 @@
     const list = $('lobbyPlayers');
     list.innerHTML = '';
     players.forEach((player) => {
-      const local = player.local ? '' : ' <span class="badge">extern</span>';
+      const badge = player.bot ? ' <span class="badge">Bot</span>'
+        : (player.local ? '' : ' <span class="badge">extern</span>');
+      const value = player.bot ? 'Ø ' + player.average : '◀ Board ' + player.dartboardId + ' ▶';
       list.appendChild(item(
-        '<span>' + escapeHtml(player.name) + local + '</span>'
-          + '<span class="value">◀ Board ' + player.dartboardId + ' ▶</span>',
-        'player-' + player.name, { action: 'player', name: player.name, boardId: player.dartboardId, local: player.local }));
+        '<span>' + escapeHtml(player.name) + badge + '</span>'
+          + '<span class="value">' + value + '</span>',
+        'player-' + player.name,
+        { action: 'player', name: player.name, boardId: player.dartboardId, local: player.local, bot: !!player.bot }));
     });
 
     const add = $('lobbyAdd');
@@ -534,6 +541,7 @@
       .forEach((name) => {
         add.appendChild(item('+ ' + escapeHtml(name), 'preset-' + name, { action: 'preset', name }));
       });
+    add.appendChild(item('+ Bot hinzufügen…', 'bot', { action: 'bot' }));
     add.appendChild(item('Neuer Name…', 'new', { action: 'new' }));
     const start = item('Weiter zu den Spieleinstellungen', 'continue', { action: 'continue' });
     if (players.length === 0) {
@@ -576,6 +584,27 @@
     renderLobby();
   }
 
+  function openBotDialog() {
+    const presets = BOT_PRESETS.map(([name, average]) => ({
+      label: name + ' (Ø ' + average + ')',
+      onSelect: () => addBot(average)
+    }));
+    openModal('Bot hinzufügen', [
+      ...presets,
+      {
+        label: 'Eigene Stärke',
+        value: () => 'Ø ' + botAverage,
+        onCycle: (delta) => { botAverage = Math.max(0, Math.min(180, botAverage + 5 * delta)); }
+      },
+      { label: () => 'Bot mit Ø ' + botAverage + ' hinzufügen', onSelect: () => addBot(botAverage) },
+      { label: 'Abbrechen' }
+    ]);
+  }
+
+  async function addBot(average) {
+    await call(Api.post('/api/lobby/bots', { average }));
+  }
+
   async function addPlayer(name) {
     if (!name) {
       return;
@@ -593,7 +622,7 @@
   }
 
   async function lobbyStep(el, delta) {
-    if (el.dataset.action !== 'player' || el.dataset.local !== 'true') {
+    if (el.dataset.action !== 'player' || el.dataset.local !== 'true' || el.dataset.bot === 'true') {
       return;
     }
     const boardId = Math.max(1, Math.min(8, Number(el.dataset.boardId) + delta));
@@ -608,6 +637,9 @@
         break;
       case 'new':
         Osk.open('Spielername eingeben', (name) => addPlayer(name));
+        break;
+      case 'bot':
+        openBotDialog();
         break;
       case 'continue':
         show('settings');

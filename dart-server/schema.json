@@ -114,6 +114,10 @@
         "name": {
           "type": "string"
         },
+        "bot": {
+          "type": "boolean",
+          "description": "optional (onion-server): true, wenn der Spieler ein Bot ist (virtuelles Board 900–999); fehlt bei Menschen"
+        },
         "punktestand": {
           "type": "integer",
           "description": "X01: Restpunkte (Countdown); Cricket: erzielte Punkte"

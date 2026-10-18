@@ -3,15 +3,19 @@ package it.tobaben.dart.application.session;
 import it.tobaben.dart.application.DartboardInput;
 import it.tobaben.dart.application.RegisteredPlayer;
 import it.tobaben.dart.application.TournamentEngine;
+import it.tobaben.dart.application.bot.BotService;
 import it.tobaben.dart.application.lobby.LobbyPlayer;
 import it.tobaben.dart.application.lobby.LobbyResult;
 import it.tobaben.dart.application.lobby.LobbyService;
 import it.tobaben.dart.application.port.GameUpdatePublisherPort;
 import it.tobaben.dart.application.port.SoundPublisherPort;
 import it.tobaben.dart.common.Player;
+import it.tobaben.dart.game.bot.BotProfile;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -35,6 +39,7 @@ public class ServerSession {
     private final GameUpdatePublisherPort updatePublisher;
     private final SoundPublisherPort soundPublisher;
     private final LobbyService lobby;
+    private final BotService bots;
     private final List<Runnable> changeListeners = new CopyOnWriteArrayList<>();
 
     private SessionPhase phase = SessionPhase.IDLE;
@@ -47,10 +52,42 @@ public class ServerSession {
                          LobbyService lobby,
                          GameUpdatePublisherPort updatePublisher,
                          SoundPublisherPort soundPublisher) {
+        this(inputQueue, lobby, updatePublisher, soundPublisher, null);
+    }
+
+    /** @param bots plays the bots of each tournament; null = no bots (e.g. tests) */
+    public ServerSession(BlockingQueue<DartboardInput> inputQueue,
+                         LobbyService lobby,
+                         GameUpdatePublisherPort updatePublisher,
+                         SoundPublisherPort soundPublisher,
+                         BotService bots) {
         this.inputQueue = inputQueue;
         this.lobby = lobby;
-        this.updatePublisher = updatePublisher;
+        this.bots = bots;
+        this.updatePublisher = bots == null ? updatePublisher : bots.observing(updatePublisher);
         this.soundPublisher = soundPublisher;
+    }
+
+    /** Host-side: adds a bot; a blank name becomes "Bot (Ø <average>)". */
+    public synchronized LobbyResult addBot(String name, int average) {
+        if (this.bots == null) {
+            return LobbyResult.failure("Bots sind in diesem Modus nicht verfügbar");
+        }
+        if (this.phase != SessionPhase.LOBBY) {
+            return LobbyResult.failure("Lobby ist nicht geöffnet");
+        }
+        BotProfile profile;
+        try {
+            profile = new BotProfile(average);
+        } catch (IllegalArgumentException e) {
+            return LobbyResult.failure(e.getMessage());
+        }
+        String botName = name == null || name.isBlank() ? defaultBotName(average) : name;
+        LobbyResult result = this.lobby.addBot(botName, profile);
+        if (result.ok()) {
+            fireChange();
+        }
+        return result;
     }
 
     /** Fires after every state change (web layer pushes SSE, lobby adapter republishes). */
@@ -124,6 +161,16 @@ public class ServerSession {
         return result;
     }
 
+    /** "Bot (Ø 40)", then "Bot 2 (Ø 40)", … so several bots of one strength fit in the lobby. */
+    private String defaultBotName(int average) {
+        List<String> taken = this.lobby.getPlayers().stream().map(LobbyPlayer::name).toList();
+        String name = "Bot (Ø " + average + ")";
+        for (int number = 2; taken.contains(name); number++) {
+            name = "Bot " + number + " (Ø " + average + ")";
+        }
+        return name;
+    }
+
     /** Host-side reordering of the lobby lineup (web UI). */
     public synchronized LobbyResult movePlayer(String name, int offset) {
         if (this.phase != SessionPhase.LOBBY) {
@@ -157,7 +204,8 @@ public class ServerSession {
 
         List<RegisteredPlayer> players = new ArrayList<>();
         for (LobbyPlayer waiting : lineup) {
-            players.add(new RegisteredPlayer(players.size(), new Player(waiting.name()), waiting.dartboardId()));
+            players.add(new RegisteredPlayer(players.size(), new Player(waiting.name()),
+                    waiting.dartboardId(), waiting.bot()));
         }
         this.inputQueue.clear(); // stray throws from before the start must not count
         TournamentEngine engine = new TournamentEngine(
@@ -168,6 +216,15 @@ public class ServerSession {
         this.gameConfig = config;
         this.tournamentPlayers = List.copyOf(players);
         this.phase = SessionPhase.RUNNING;
+        if (this.bots != null) {
+            Map<Integer, BotProfile> botsByBoard = new HashMap<>();
+            for (RegisteredPlayer registered : players) {
+                if (registered.isBot()) {
+                    botsByBoard.put(registered.dartboardId(), registered.bot());
+                }
+            }
+            this.bots.startTournament(botsByBoard, config.houseRules());
+        }
         this.tournamentThread = new Thread(() -> runTournament(engine), "tournament");
         this.tournamentThread.start();
         fireChange();
@@ -198,6 +255,9 @@ public class ServerSession {
         this.lastResults = engine.getGameResults();
         this.phase = SessionPhase.IDLE;
         this.tournamentThread = null;
+        if (this.bots != null) {
+            this.bots.stopTournament();
+        }
         this.updatePublisher.publishIdle();
         fireChange();
     }
